@@ -1,6 +1,0 @@
-{"ts":"2026-11-08T09:08:21.614Z","op":"approve","queueId":"q-mw7m0w9z-ee800384","kind":"memory","id":"mem-deploy-notes","node":"node-a","version":1,"seq":1,"by":"admin"}
-{"ts":"2026-11-08T09:08:21.627Z","op":"approve","queueId":"q-mw7m0wa8-d6453381","kind":"skill","id":"demo-greet","node":"node-a","version":1,"seq":2,"by":"admin"}
-{"ts":"2026-11-08T09:08:21.638Z","op":"reject","queueId":"q-mw7m0wa2-89e2164a","kind":"memory","id":"mem-project-conventions","node":"node-a","by":"admin","reason":"标题太泛，请补充适用范围"}
-{"ts":"2026-11-08T09:08:26.761Z","op":"approve","queueId":"q-mw7m0wa5-a5031ec7","kind":"memory","id":"mem-runbook-expired","node":"node-a","version":1,"seq":3,"by":"admin"}
-{"ts":"2026-11-08T09:08:27.463Z","op":"cleanup-propose","kind":"memory","id":"mem-runbook-expired","by":"admin","reason":"已过期（demo 清理验收）"}
-{"ts":"2026-11-08T09:08:27.484Z","op":"cleanup-approve","kind":"memory","id":"mem-runbook-expired","by":"admin","reason":"demo 清理审批通过","seq":4}

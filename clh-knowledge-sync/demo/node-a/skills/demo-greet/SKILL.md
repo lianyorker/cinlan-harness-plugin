@@ -1,6 +1,6 @@
 ---
 name: demo-greet
-description: deepseek-sync demo skill：按问候语模板生成回复
+description: clh-knowledge-sync demo skill：按问候语模板生成回复
 ---
 
 # demo-greet
