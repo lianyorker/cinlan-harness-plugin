@@ -1,0 +1,35 @@
+{
+  "node": {
+    "id": "node-b",
+    "token": "token-b"
+  },
+  "hub": {
+    "activeProfile": "intranet",
+    "profiles": {
+      "intranet": {
+        "protocol": "http",
+        "host": "127.0.0.1",
+        "port": 47610,
+        "timeoutMs": 5000
+      }
+    }
+  },
+  "sync": {
+    "auto": false,
+    "intervalSec": 3,
+    "syncOnStart": false,
+    "memoryDir": "./memory",
+    "skillRoots": [
+      "./skills"
+    ],
+    "stateDirName": ".clh-knowledge-sync"
+  },
+  "oneshot": {
+    "enabled": false,
+    "commands": [],
+    "resultFile": ""
+  },
+  "log": {
+    "level": "info"
+  }
+}

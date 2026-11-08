@@ -1,0 +1,8 @@
+# @cinlan/clh-knowledge-sync 组合包：树外安装（clh plugin add <本包>）后叠到 profile。
+# 行 1 提供同步服务（无依赖，任何组合可挂）；行 2 向 harness 工具流水线注册模型工具，
+# 依赖 base profile 的 tools 服务，缺失时保持 PENDING 不影响行 1。
+- insert:
+    - id: clh-knowledge-sync
+      name: '@cinlan/clh-knowledge-sync'
+    - id: clh-knowledge-sync-tools
+      name: '@cinlan/clh-knowledge-sync/tools'

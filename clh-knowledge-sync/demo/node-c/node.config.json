@@ -1,0 +1,37 @@
+{
+  "node": {
+    "id": "node-c",
+    "token": "token-c"
+  },
+  "hub": {
+    "activeProfile": "intranet",
+    "profiles": {
+      "intranet": {
+        "protocol": "http",
+        "host": "127.0.0.1",
+        "port": 47611,
+        "timeoutMs": 5000
+      }
+    }
+  },
+  "sync": {
+    "auto": false,
+    "intervalSec": 3,
+    "syncOnStart": false,
+    "memoryDir": "./memory",
+    "skillRoots": [
+      "./skills"
+    ],
+    "stateDirName": ".clh-knowledge-sync"
+  },
+  "oneshot": {
+    "enabled": true,
+    "commands": [
+      "doctor"
+    ],
+    "resultFile": "./oneshot-node-c.json"
+  },
+  "log": {
+    "level": "info"
+  }
+}

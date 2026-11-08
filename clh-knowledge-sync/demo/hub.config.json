@@ -1,0 +1,24 @@
+{
+  "listen": {
+    "protocol": "http",
+    "host": "127.0.0.1",
+    "port": 47610
+  },
+  "auth": {
+    "adminToken": "demo-admin-token",
+    "nodeTokens": {
+      "node-a": "token-a",
+      "node-b": "token-b",
+      "node-c": "token-c"
+    }
+  },
+  "dataDir": "./hub-data",
+  "limits": {
+    "maxBodyBytes": 20971520,
+    "maxFileBytes": 5242880,
+    "maxItemsPerPush": 100
+  },
+  "log": {
+    "level": "info"
+  }
+}

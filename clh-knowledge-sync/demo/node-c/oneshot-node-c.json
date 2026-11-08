@@ -1,0 +1,78 @@
+{
+  "node": "node-c",
+  "ok": false,
+  "at": "2026-11-08T09:08:28.665Z",
+  "results": [
+    {
+      "command": "doctor",
+      "ok": true,
+      "data": {
+        "ok": false,
+        "hub": "http://127.0.0.1:47611 [profile=intranet]",
+        "error": {
+          "code": "connect-failed",
+          "message": "无法连接 hub http://127.0.0.1:47611 [profile=intranet]（ECONNREFUSED）；请检查配置中的地址/端口与 hub 是否在线"
+        }
+      }
+    },
+    {
+      "command": "pull",
+      "ok": true,
+      "data": {
+        "operation": "pull",
+        "ok": false,
+        "counts": {},
+        "errors": [
+          {
+            "code": "connect-failed",
+            "message": "无法连接 hub http://127.0.0.1:47611 [profile=intranet]（ECONNREFUSED）；请检查配置中的地址/端口与 hub 是否在线"
+          }
+        ]
+      }
+    },
+    {
+      "command": "push",
+      "ok": true,
+      "data": {
+        "operation": "push",
+        "ok": true,
+        "counts": {
+          "pushed": 0
+        }
+      }
+    },
+    {
+      "command": "status",
+      "ok": true,
+      "data": {
+        "operation": "status",
+        "ok": true,
+        "counts": {
+          "checked": 0
+        },
+        "state": {
+          "version": 1,
+          "cursor": 0,
+          "pushed": {},
+          "conflicts": [],
+          "lastError": {
+            "at": "2026-11-08T09:08:28.632Z",
+            "code": "connect-failed",
+            "message": "无法连接 hub http://127.0.0.1:47611 [profile=intranet]（ECONNREFUSED）；请检查配置中的地址/端口与 hub 是否在线",
+            "operation": "pull"
+          },
+          "hub": "http://127.0.0.1:47611 [profile=intranet]",
+          "node": "node-c"
+        }
+      }
+    },
+    {
+      "command": "search deploy",
+      "ok": false,
+      "error": {
+        "code": "connect-failed",
+        "message": "无法连接 hub http://127.0.0.1:47611 [profile=intranet]（ECONNREFUSED）；请检查配置中的地址/端口与 hub 是否在线"
+      }
+    }
+  ]
+}

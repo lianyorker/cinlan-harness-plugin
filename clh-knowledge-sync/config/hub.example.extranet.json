@@ -1,0 +1,28 @@
+{
+  "listen": {
+    "protocol": "https",
+    "host": "0.0.0.0",
+    "port": 47611,
+    "tls": {
+      "certFile": "${DSS_TLS_CERT}",
+      "keyFile": "${DSS_TLS_KEY}"
+    }
+  },
+  "auth": {
+    "adminToken": "${DSS_ADMIN_TOKEN}",
+    "nodeTokens": {
+      "node-a": "${DSS_TOKEN_NODE_A}",
+      "node-b": "${DSS_TOKEN_NODE_B}"
+    }
+  },
+  "dataDir": "./hub-data",
+  "limits": {
+    "maxBodyBytes": 20971520,
+    "maxFileBytes": 5242880,
+    "maxItemsPerPush": 100
+  },
+  "log": {
+    "level": "info",
+    "dir": "./hub-data/logs"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "kind": "memory",
+  "id": "mem-runbook-expired",
+  "title": "Runbook Expired",
+  "content": "这条已过期，用于清理流程验收。",
+  "tags": [
+    "runbook"
+  ],
+  "meta": {
+    "file": "runbook-expired.md"
+  },
+  "expires": "2026-11-01T00:00:00.000Z",
+  "hash": "c432af429a6e8c79347ec7543ba26b4cf3e16371c018f07a041c581c79adad30",
+  "version": 1,
+  "seq": 3,
+  "sourceNode": "node-a",
+  "updatedAt": "2026-11-08T10:10:00.000Z",
+  "approvedBy": "admin",
+  "approvedAt": "2026-11-08T09:08:26.744Z",
+  "cleanupFlag": {
+    "proposedAt": "2026-11-08T09:08:27.458Z",
+    "reason": "已过期（demo 清理验收）",
+    "by": "admin"
+  },
+  "archivedAt": "2026-11-08T09:08:27.470Z",
+  "archivedBy": "admin",
+  "archiveReason": "demo 清理审批通过"
+}

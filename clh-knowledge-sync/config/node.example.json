@@ -1,0 +1,44 @@
+{
+  "node": {
+    "id": "node-a",
+    "token": "${DSS_TOKEN_NODE_A}"
+  },
+  "hub": {
+    "activeProfile": "intranet",
+    "profiles": {
+      "intranet": {
+        "protocol": "http",
+        "host": "10.0.0.5",
+        "port": 47610,
+        "timeoutMs": 8000
+      },
+      "extranet": {
+        "protocol": "https",
+        "host": "hub.example.com",
+        "port": 47611,
+        "token": "${DSS_TOKEN_NODE_A_EXTRANET}",
+        "tls": {
+          "rejectUnauthorized": true,
+          "caFile": ""
+        }
+      }
+    }
+  },
+  "sync": {
+    "auto": true,
+    "intervalSec": 300,
+    "syncOnStart": true,
+    "memoryDir": "./memory",
+    "skillRoots": ["./skills"],
+    "stateDirName": ".clh-knowledge-sync"
+  },
+  "oneshot": {
+    "enabled": false,
+    "commands": [],
+    "resultFile": ""
+  },
+  "log": {
+    "level": "info",
+    "dir": ""
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "node": "node-b",
+  "ok": true,
+  "at": "2026-11-08T09:08:21.922Z",
+  "results": [
+    {
+      "command": "doctor",
+      "ok": true,
+      "data": {
+        "ok": true,
+        "hub": "http://127.0.0.1:47610 [profile=intranet]",
+        "detail": {
+          "ok": true,
+          "service": "deepseek-sync-hub",
+          "uptimeMs": 895,
+          "stats": {
+            "published": {
+              "memory": 1,
+              "skill": 1
+            },
+            "pending": 1,
+            "rejected": 1,
+            "archived": 0,
+            "flagged": 0,
+            "tombstones": 0,
+            "seq": 2,
+            "corruptFiles": 0
+          }
+        }
+      }
+    },
+    {
+      "command": "pull",
+      "ok": true,
+      "data": {
+        "operation": "pull",
+        "ok": true,
+        "counts": {
+          "entries": 2,
+          "written": 1,
+          "conflicts": 1,
+          "removed": 0,
+          "tombstones": 0
+        },
+        "details": [
+          {
+            "id": "mem-deploy-notes",
+            "kind": "memory",
+            "status": "conflict-copy",
+            "file": "D:\\Company\\cinlan\\apps\\cinlan-harness-plugin\\deepseek-sync\\demo\\node-b\\memory\\.deepseek-sync\\conflicts\\memory\\mem-deploy-notes-v1-1794128901884.md"
+          },
+          {
+            "id": "demo-greet",
+            "kind": "skill",
+            "status": "written",
+            "dir": "D:\\Company\\cinlan\\apps\\cinlan-harness-plugin\\deepseek-sync\\demo\\node-b\\skills\\demo-greet"
+          }
+        ]
+      }
+    },
+    {
+      "command": "push",
+      "ok": true,
+      "data": {
+        "operation": "push",
+        "ok": true,
+        "counts": {
+          "pushed": 2,
+          "total": 4,
+          "errors": 0
+        },
+        "details": [
+          {
+            "kind": "memory",
+            "id": "mem-b-local-note",
+            "status": "queued",
+            "queueId": "q-mw7m0wlt-a31d316e"
+          },
+          {
+            "kind": "memory",
+            "id": "mem-deploy-notes",
+            "status": "conflict",
+            "message": "服务端已存在该 id（v1）且内容不同；先 pull 确认后重推，或 force 覆盖",
+            "serverVersion": 1,
+            "serverHash": "7c8b0ce6336e1d5b2109ea6749064bf1c184bc411ad0e875c0b9da5e4d2bb5c1"
+          },
+          {
+            "kind": "skill",
+            "id": "b-own-skill",
+            "status": "queued",
+            "queueId": "q-mw7m0wlw-86642d7e"
+          },
+          {
+            "kind": "skill",
+            "id": "demo-greet",
+            "status": "duplicate",
+            "serverVersion": 1
+          }
+        ]
+      }
+    },
+    {
+      "command": "status",
+      "ok": true,
+      "data": {
+        "operation": "status",
+        "ok": true,
+        "counts": {
+          "checked": 2,
+          "approved": 0,
+          "rejected": 0
+        },
+        "statuses": [
+          {
+            "queueId": "q-mw7m0wlt-a31d316e",
+            "status": "pending"
+          },
+          {
+            "queueId": "q-mw7m0wlw-86642d7e",
+            "status": "pending"
+          }
+        ],
+        "state": {
+          "version": 1,
+          "cursor": 2,
+          "pushed": {
+            "mem-b-local-note": {
+              "kind": "memory",
+              "hash": "3de59934d24a64acd65d4eb9f4a3ea3dd791ba09359adb5dfd75f66d282f2e73",
+              "queueId": "q-mw7m0wlt-a31d316e",
+              "status": "pending",
+              "at": "2026-11-08T09:08:21.912Z"
+            },
+            "mem-deploy-notes": {
+              "kind": "memory",
+              "hash": "0e201dad9479ef1887ac995347baadec414eb8fbd27269a5b7d35649cdc65a29",
+              "status": "conflict",
+              "reason": "服务端已存在该 id（v1）且内容不同；先 pull 确认后重推，或 force 覆盖",
+              "version": 1,
+              "at": "2026-11-08T09:08:21.912Z"
+            },
+            "skill-b-own-skill": {
+              "kind": "skill",
+              "hash": "35337622d91774d50b59cda9f4d8c9b899bd6821b7ff57fc5fc998166b10acb2",
+              "queueId": "q-mw7m0wlw-86642d7e",
+              "status": "pending",
+              "at": "2026-11-08T09:08:21.912Z"
+            },
+            "skill-demo-greet": {
+              "kind": "skill",
+              "hash": "ce72aa43919d6de90cc6c875a398d03d7123ffed0caab6485777b539c9a8f2bf",
+              "status": "published-duplicate",
+              "version": 1,
+              "at": "2026-11-08T09:08:21.912Z"
+            }
+          },
+          "conflicts": [
+            {
+              "ts": "2026-11-08T09:08:21.888Z",
+              "direction": "pull",
+              "kind": "memory",
+              "id": "mem-deploy-notes",
+              "detail": "本地内容与总库 v1 不同；远端副本已存到 D:\\Company\\cinlan\\apps\\cinlan-harness-plugin\\deepseek-sync\\demo\\node-b\\memory\\.deepseek-sync\\conflicts\\memory\\mem-deploy-notes-v1-1794128901884.md"
+            },
+            {
+              "ts": "2026-11-08T09:08:21.912Z",
+              "direction": "push",
+              "kind": "memory",
+              "id": "mem-deploy-notes",
+              "detail": "服务端已存在该 id（v1）且内容不同；先 pull 确认后重推，或 force 覆盖"
+            }
+          ],
+          "lastPullAt": "2026-11-08T09:08:21.896Z",
+          "lastSyncAt": "2026-11-08T09:08:21.912Z",
+          "hub": "http://127.0.0.1:47610 [profile=intranet]",
+          "node": "node-b"
+        }
+      }
+    },
+    {
+      "command": "search deploy",
+      "ok": true,
+      "data": {
+        "query": "deploy",
+        "total": 1,
+        "results": [
+          {
+            "kind": "memory",
+            "id": "mem-deploy-notes",
+            "title": "Deploy Notes",
+            "tags": [
+              "deploy",
+              "node-a"
+            ],
+            "score": 9,
+            "version": 1,
+            "seq": 1,
+            "snippet": "node-a 独有内容标记 MARKER_FROM_NODE_A：部署分三步：构建、上传、切流。",
+            "updatedAt": "2026-11-08T10:00:00.000Z",
+            "sourceNode": "node-a"
+          }
+        ]
+      }
+    }
+  ]
+}

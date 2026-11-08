@@ -1,0 +1,27 @@
+- name: '@cinlan/clh-knowledge-sync'
+  config:
+    node:
+      id: node-a
+      token: token-a
+    hub:
+      activeProfile: intranet
+      profiles:
+        intranet:
+          protocol: http
+          host: '127.0.0.1'
+          port: 47610
+          timeoutMs: 5000
+    sync:
+      auto: true
+      intervalSec: 3
+      syncOnStart: true
+      memoryDir: ./memory
+      skillRoots:
+        - ./skills
+      stateDirName: .clh-knowledge-sync
+    oneshot:
+      enabled: false
+      commands: []
+      resultFile: ''
+    log:
+      level: info

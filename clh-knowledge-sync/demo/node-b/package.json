@@ -1,0 +1,5 @@
+{
+  "name": "@demo/node-b",
+  "private": true,
+  "type": "module"
+}

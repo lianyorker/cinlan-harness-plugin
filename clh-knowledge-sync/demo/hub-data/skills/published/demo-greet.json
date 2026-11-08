@@ -1,0 +1,30 @@
+{
+  "kind": "skill",
+  "id": "demo-greet",
+  "title": "demo-greet",
+  "description": "deepseek-sync demo skill：按问候语模板生成回复",
+  "files": [
+    {
+      "path": "SKILL.md",
+      "encoding": "utf8",
+      "content": "---\nname: demo-greet\ndescription: deepseek-sync demo skill：按问候语模板生成回复\n---\n\n# demo-greet\n\n用法：读取 templates/greeting.txt 并按名字渲染。"
+    },
+    {
+      "path": "templates/greeting.txt",
+      "encoding": "utf8",
+      "content": "Hello, {{name}}! (from node-a demo-greet)"
+    }
+  ],
+  "tags": [],
+  "meta": {
+    "root": "D:\\Company\\cinlan\\apps\\cinlan-harness-plugin\\deepseek-sync\\demo\\node-a\\skills"
+  },
+  "hash": "ce72aa43919d6de90cc6c875a398d03d7123ffed0caab6485777b539c9a8f2bf",
+  "version": 1,
+  "seq": 2,
+  "sourceNode": "node-a",
+  "updatedAt": "2026-11-08T09:08:21.472Z",
+  "approvedBy": "admin",
+  "approvedAt": "2026-11-08T09:08:21.618Z",
+  "cleanupFlag": null
+}

@@ -1,0 +1,1 @@
+Hello, {{name}}! (from node-a demo-greet)
