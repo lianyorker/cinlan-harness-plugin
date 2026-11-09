@@ -157,7 +157,7 @@ npm run build && node demo/e2e-demo.mjs
 1. `git pull` 到最新；`cd clh-knowledge-sync && npm install && npm run build`。
 2. `"<安装目录>\resources\runtime\cli\bin\dsh.cmd" plugin --profile <name> add "file:<本包绝对路径>"`（`dsh.cmd` 不在 PATH，用全路径；`plugin` 必须是第一个子命令）。报 `incompatible-version` 时按提示 `allow-version` 授精确豁免后重跑。
 3. config override 写进**同一个 profile** 的 `cordis.patch.yml`（`- id: clh-knowledge-sync` 的 id-targeted 行即可，tools 行不用动）。**bundle 装进 A profile、override 写进 B profile，A 的主行会因缺 config 启动即 FAILED。**
-4. `memoryDir`/`skillRoots` 写绝对路径（会被 resolve 到 harness 进程 cwd，不是 profile 目录）；统一用 `~/.dsh/knowledge-sync/{memory,skills}` 约定，别各机器各起各的目录名。
+4. `memoryDir`/`skillRoots` 写绝对路径（会被 resolve 到 harness 进程 cwd，不是 profile 目录）；统一用 `~/.dsh/clh-knowledge-sync/{memory,skills}`——**自家插件数据目录一律 `clh-` 前缀**，别各机器各起各的目录名。
 5. `node.token`：字面 token 最省事；用 `!!js process.env.X` 时变量必须存在于 **app 进程**环境——`setx` 后要托盘完全退出再启动才生效，cmd 里验证用 `echo %VAR%`（`$env:` 是 PowerShell 语法，cmd 只回显字面）。
 6. 生效与验证：**运行中的会话不会换组合**——改完 patch/装完包要重启 app、开新会话；Settings → 插件页看行状态，或看 `<memoryDir>\.clh-knowledge-sync\logs\` 与 `sync-state.json` 有没有新写入。
 

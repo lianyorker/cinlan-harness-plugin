@@ -10,7 +10,7 @@
 ## 0. 备齐三样东西
 
 - **节点 token**：hub `auth.nodeTokens` 里给本节点登记的值。
-- **数据目录（统一约定）**：`memoryDir`/`skillRoots` 用 `%USERPROFILE%\.dsh\knowledge-sync\memory` 和 `%USERPROFILE%\.dsh\knowledge-sync\skills`——**所有机器同一约定，目录名不要自由发挥**（实测出现过 `clh-knowledge-sync`、`deepseek-sync` 各起各的，跨机排障时对不上号）。必须绝对路径。
+- **数据目录（统一约定）**：`memoryDir`/`skillRoots` 用 `%USERPROFILE%\.dsh\clh-knowledge-sync\memory` 和 `%USERPROFILE%\.dsh\clh-knowledge-sync\skills`——**规范：自家插件数据目录一律 `clh-` 前缀**，所有机器同一约定，目录名不要自由发挥（实测出现过 `knowledge-sync`、`deepseek-sync` 各起各的，跨机排障时对不上号）。必须绝对路径。
 - **dsh.cmd 路径**：`<安装目录>\resources\runtime\cli\bin\dsh.cmd`——不在 PATH，必须全路径调用；`plugin` 必须是第一个子命令。
 
 ## 1. 拿源码：整仓 clone 是正常的
@@ -99,9 +99,9 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
       auto: true
       intervalSec: 300
       syncOnStart: true
-      memoryDir: 'C:\Users\<user>\.dsh\knowledge-sync\memory'      # ← 统一约定，勿改目录名
+      memoryDir: 'C:\Users\<user>\.dsh\clh-knowledge-sync\memory'      # ← 统一约定 clh- 前缀，勿改
       skillRoots:
-        - 'C:\Users\<user>\.dsh\knowledge-sync\skills'             # ← 统一约定，勿改目录名
+        - 'C:\Users\<user>\.dsh\clh-knowledge-sync\skills'             # ← 统一约定 clh- 前缀，勿改
     oneshot:
       enabled: false
       commands: []
