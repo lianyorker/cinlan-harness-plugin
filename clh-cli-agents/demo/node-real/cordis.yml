@@ -1,0 +1,14 @@
+- name: '@cinlan/clh-cli-agents'
+  config:
+    agents:
+      echo:
+        command: node
+        args:
+          - D:/Company/cinlan/apps/cinlan-harness-plugin/clh-cli-agents/demo/fake-agents/echo-agent.mjs
+        promptInjectionMode: argv
+        argvSeparator: '--'
+        outputFormat: json
+        detect: node D:/Company/cinlan/apps/cinlan-harness-plugin/clh-cli-agents/demo/fake-agents/echo-agent.mjs --version
+    detectOnStart: true
+    log:
+      level: info

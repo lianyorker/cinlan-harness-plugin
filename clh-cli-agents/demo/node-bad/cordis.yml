@@ -1,0 +1,8 @@
+- name: '@cinlan/clh-cli-agents'
+  config:
+    agents:
+      fp:
+        command: node
+        args:
+          - D:/Company/cinlan/apps/cinlan-harness-plugin/clh-cli-agents/demo/fake-agents/echo-agent.mjs
+        promptInjectionMode: flag-prompt

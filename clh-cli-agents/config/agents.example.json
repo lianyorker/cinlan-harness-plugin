@@ -1,0 +1,23 @@
+{
+  "agents": {
+    "claude": {
+      "command": "claude",
+      "args": ["-p", "--output-format", "json"],
+      "promptInjectionMode": "argv",
+      "outputFormat": "json",
+      "timeoutMs": 600000,
+      "maxConcurrent": 2,
+      "description": "Claude Code headless 一次性运行；Windows 上若 claude 是 .cmd 包装，请把 command 指向原生安装的 claude.exe（或 command: node + args 首项指向 cli.js）"
+    },
+    "codex": {
+      "command": "codex",
+      "args": ["exec", "--json"],
+      "promptInjectionMode": "argv",
+      "outputFormat": "json",
+      "timeoutMs": 600000,
+      "description": "OpenAI Codex CLI：codex exec <prompt>"
+    }
+  },
+  "detectOnStart": true,
+  "log": { "level": "info" }
+}

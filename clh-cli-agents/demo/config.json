@@ -1,0 +1,120 @@
+{
+  "agents": {
+    "echo": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/echo-agent.mjs",
+        "--output-format",
+        "json"
+      ],
+      "promptInjectionMode": "argv",
+      "argvSeparator": "--",
+      "outputFormat": "json",
+      "description": "argv 注入 + -- 分隔",
+      "detect": "node ./demo/fake-agents/echo-agent.mjs --version"
+    },
+    "echo-text": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/echo-agent.mjs"
+      ],
+      "promptInjectionMode": "argv",
+      "argvSeparator": "--",
+      "outputFormat": "text",
+      "detect": "node ./demo/fake-agents/echo-agent.mjs --version"
+    },
+    "promptflag": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/echo-agent.mjs",
+        "--output-format",
+        "json"
+      ],
+      "promptInjectionMode": "flag-prompt",
+      "promptFlag": "--prefill",
+      "outputFormat": "json",
+      "detect": "node ./demo/fake-agents/echo-agent.mjs --version"
+    },
+    "stdin": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/echo-agent.mjs",
+        "--output-format",
+        "json"
+      ],
+      "promptInjectionMode": "stdin-after-start",
+      "outputFormat": "json",
+      "detect": "node ./demo/fake-agents/echo-agent.mjs --version"
+    },
+    "slow": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/echo-agent.mjs",
+        "--sleep-ms",
+        "9000",
+        "--output-format",
+        "json"
+      ],
+      "promptInjectionMode": "argv",
+      "argvSeparator": "--",
+      "outputFormat": "json",
+      "detect": "node ./demo/fake-agents/echo-agent.mjs --version"
+    },
+    "queue": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/echo-agent.mjs",
+        "--sleep-ms",
+        "1200",
+        "--output-format",
+        "json"
+      ],
+      "promptInjectionMode": "argv",
+      "argvSeparator": "--",
+      "outputFormat": "json",
+      "maxConcurrent": 1,
+      "detect": "node ./demo/fake-agents/echo-agent.mjs --version"
+    },
+    "withenv": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/echo-agent.mjs",
+        "--output-format",
+        "json"
+      ],
+      "promptInjectionMode": "argv",
+      "argvSeparator": "--",
+      "outputFormat": "json",
+      "env": {
+        "STUB_TOKEN": "e2e-secret"
+      },
+      "detect": "node ./demo/fake-agents/echo-agent.mjs --version"
+    },
+    "fail": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/fail-agent.mjs"
+      ],
+      "promptInjectionMode": "argv",
+      "outputFormat": "text"
+    },
+    "badjson": {
+      "command": "node",
+      "args": [
+        "./demo/fake-agents/fail-agent.mjs"
+      ],
+      "promptInjectionMode": "argv",
+      "outputFormat": "json"
+    },
+    "ghost": {
+      "command": "clh-e2e-ghost-cmd",
+      "promptInjectionMode": "argv",
+      "outputFormat": "text",
+      "description": "不在 PATH 的命令：探测应报不在位"
+    }
+  },
+  "detectOnStart": true,
+  "log": {
+    "level": "info"
+  }
+}

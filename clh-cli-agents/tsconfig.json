@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "outDir": "lib",
+    "rootDir": "src",
+    "types": ["node"],
+    // harness 是本机相邻 checkout；发布安装时这些包由 harness 运行时提供（optional peers）
+    "paths": {
+      "@deepseek-ai/cordis": ["../../cinlan-harness/vendor/cordis/lib/types/index.d.ts"],
+      "@deepseek-ai/dsh-tools": ["../../cinlan-harness/packages/core/tools/lib/types/index.d.ts"],
+      "@deepseek-ai/schemastery": ["../../cinlan-harness/vendor/schemastery/lib/types/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

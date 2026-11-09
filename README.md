@@ -7,6 +7,7 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 | 子目录 | 包名 | 说明 |
 |---|---|---|
 | `clh-knowledge-sync/` | `@cinlan/clh-knowledge-sync` | 跨实例/跨节点知识同步（记忆文件 + skills + 后续习惯/会话记忆）：节点同步服务 + hub 总库进程 + 4 个模型工具。详见 `clh-knowledge-sync/README.md` |
+| `clh-cli-agents/` | `@cinlan/clh-cli-agents` | 外部 CLI agent 通用集成（orca 式声明目录：claude/codex/... 的探测、prompt 注入、headless 运行）：服务 + 2 个模型工具 + 独立 CLI。详见 `clh-cli-agents/README.md` |
 
 （新增插件在此登记一行。）
 

@@ -1,0 +1,8 @@
+# @cinlan/clh-cli-agents 组合包：树外安装（clh plugin add <本包>）后叠到 profile。
+# 行 1 提供外部 CLI agent 集成服务（无依赖，任何组合可挂）；行 2 向 harness 工具流水线注册
+# 模型工具，依赖 base profile 的 tools 服务，缺失时保持 PENDING 不影响行 1。
+- insert:
+    - id: clh-cli-agents
+      name: '@cinlan/clh-cli-agents'
+    - id: clh-cli-agents-tools
+      name: '@cinlan/clh-cli-agents/tools'

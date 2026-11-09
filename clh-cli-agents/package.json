@@ -1,0 +1,64 @@
+{
+  "name": "@cinlan/clh-cli-agents",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Generic external CLI agent integration for Cinlan/DeepSeek Harness: orca-style declarative agent catalog (detect / prompt injection / headless exec), model tools + standalone CLI",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./tools": {
+      "types": "./lib/tools.d.ts",
+      "default": "./lib/tools.js"
+    },
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "clh-cli-agents": "./bin/clh-cli-agents.js"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "bin/*.js",
+    "cordis.patch.yml",
+    "config/*.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "node demo/e2e-demo.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.6-alpha.1",
+    "@deepseek-ai/dsh-tools": "^0.2.2-alpha.2",
+    "@deepseek-ai/schemastery": "^3.18.6-alpha.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    },
+    "@deepseek-ai/schemastery": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
