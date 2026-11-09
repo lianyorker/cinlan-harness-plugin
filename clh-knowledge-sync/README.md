@@ -150,6 +150,8 @@ npm run build && node demo/e2e-demo.mjs
 
 ## 新机器部署 checklist（Windows Desktop 实测）
 
+> **完整一次到位教程见 [`INSTALL.md`](./INSTALL.md)**——含逐条命令、config 模板与错误速查表，新机器照做即可装成。下面是浓缩版。
+
 把仓库 clone 到任意目录（例如 `~/.dsh/plugins/cinlan-harness-plugin`）只是**存放源码**——该目录不会被运行时扫描，解析只认 dsh 安装目录 + profile `node_modules` + `$DSH_HOME/profiles/node_modules` 回退。**整仓 clone 是正常形态**：本仓库是 monorepo（根目录没有 `package.json`），只能整仓拉取；但 `plugin add` 的路径必须指到**子目录** `clh-knowledge-sync`，指到仓库根会以 not-a-package 失败；也不要直接 `plugin add <git URL>`——pnpm 会把整仓当成单个依赖拉取，同样不是可安装包。真正安装按以下顺序：
 
 1. `git pull` 到最新；`cd clh-knowledge-sync && npm install && npm run build`。
@@ -166,6 +168,7 @@ npm run build && node demo/e2e-demo.mjs
   2. 行状态：Settings → 插件页看 `clh-knowledge-sync` 行的 FAILED 原文；或 `dsh.cmd --profile <name> --dump-config` 看组合后的行（`node.token` undefined 或行缺席一目了然）。
   3. 最常见：`!!js process.env.X` 取不到 → token undefined → schema `required()` 拒 → 行 FAILED。换字面 token，或 `setx` 后完全重启 app。
 - **改了源码不生效**：`file:` 是拷贝——重建后要 `plugin remove` + `plugin add` 重装，否则 profile `node_modules` 里跑的还是旧副本（`link:` 相反）。
+- **`plugin add` 报 `ERR_PNPM_UNEXPECTED_STORE`**：profile 现有 node_modules 链接的 store 与本次调用解析的 store 不一致（CLI 环境缺 `LOCALAPPDATA` 时 pnpm 回落 `~/.pnpm-store`）。首选在同一窗口 `$env:LOCALAPPDATA="$env:USERPROFILE\AppData\Local"; $env:npm_config_store_dir="$env:USERPROFILE\AppData\Local\pnpm\store\v11"` 后重跑；仍失败则 `cmd /c rmdir /s /q` 删 profile `node_modules` + 删 `pnpm-lock.yaml` 后重跑（**禁用 `Remove-Item -Recurse`**，会顺 junction 删 store 真实数据）。
 - **会话里 `run_code` 报 `SetNamedSecurityInfoW failed (Win32 5)`**：宿主沙箱给工作目录授 ACL 被拒（目录属主/杀软），与本插件无关，换普通用户目录下的工作区验证。
 
 ## 配置参考
