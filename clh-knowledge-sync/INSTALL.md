@@ -16,7 +16,7 @@
 ## 1. 拿源码：整仓 clone 是正常的
 
 ```powershell
-git clone https://gitlab.zkthink.com/lingyong/cinlan-harness-plugin.git "$env:USERPROFILE\.dsh\plugins\cinlan-harness-plugin"
+git clone https://github.com/lianyorker/cinlan-harness-plugin.git "$env:USERPROFILE\.dsh\plugins\cinlan-harness-plugin"
 ```
 
 仓库是 monorepo（根目录**没有** package.json），clone 只能整仓。但注意两条边界：
