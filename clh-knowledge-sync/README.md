@@ -145,8 +145,28 @@ npm run build && node demo/e2e-demo.mjs
 
 ### 已验证 / 未验证
 
-- 已验证：http 全链路（上表全部）、CLI 全部子命令、`${ENV}` 插值（hub 与节点 JSON 配置）、hub 重启后状态恢复（四区目录 + seq 持久化）；`dsh plugin --profile desktop add file:<本包>` 安装全链路（Desktop 安装版 0.2.2-rc.1，2026-11-08）：依赖落进 profile `node_modules`、bundle 默认启用追加进 `dsh.profile.bundles`。注意安装前需按 CLI 提示授精确版本豁免：`dsh plugin --profile desktop allow-version @cinlan/clh-knowledge-sync@0.1.0 --dsh-version <运行时版本> --accept-risk`（peer 检查按运行时自报版本判定，报错里引用的可能是 installer 元数据版本，以 `allow-version` 命令回显的版本为准）。
+- 已验证：http 全链路（上表全部）、CLI 全部子命令、`${ENV}` 插值（hub 与节点 JSON 配置）、hub 重启后状态恢复（四区目录 + seq 持久化）；`dsh plugin --profile desktop add file:<本包>` 安装全链路（Desktop 安装版 0.2.2-rc.1，2026-11-08）：依赖落进 profile `node_modules`、bundle 默认启用追加进 `dsh.profile.bundles`；desktop profile 实际运行（2026-11-08）：自动同步按周期执行、推送 1 条进 hub 待审批队列、日志与 `sync-state.json` 落盘持久化。注意安装前需按 CLI 提示授精确版本豁免：`dsh plugin --profile desktop allow-version @cinlan/clh-knowledge-sync@0.1.0 --dsh-version <运行时版本> --accept-risk`（peer 检查按运行时自报版本判定，报错里引用的可能是 installer 元数据版本，以 `allow-version` 命令回显的版本为准）。
 - 未在本机验证：真实 https 证书下的 TLS 握手（代码路径按 Node https.createServer 标准写法，demo 里未挂真实证书）；settings 页在运行中的 Desktop 面板里的实际挂载（`dsh.client` 声明、槽位注册与 `configForms` 读写通道按宿主机制实现，需重启 Desktop 后打开 Settings 验证）。
+
+## 新机器部署 checklist（Windows Desktop 实测）
+
+把仓库 clone 到任意目录（例如 `~/.dsh/plugins/cinlan-harness-plugin`）只是**存放源码**——该目录不会被运行时扫描，解析只认 dsh 安装目录 + profile `node_modules` + `$DSH_HOME/profiles/node_modules` 回退。真正安装按以下顺序：
+
+1. `git pull` 到最新；`cd clh-knowledge-sync && npm install && npm run build`。
+2. `"<安装目录>\resources\runtime\cli\bin\dsh.cmd" plugin --profile <name> add "file:<本包绝对路径>"`（`dsh.cmd` 不在 PATH，用全路径；`plugin` 必须是第一个子命令）。报 `incompatible-version` 时按提示 `allow-version` 授精确豁免后重跑。
+3. config override 写进**同一个 profile** 的 `cordis.patch.yml`（`- id: clh-knowledge-sync` 的 id-targeted 行即可，tools 行不用动）。**bundle 装进 A profile、override 写进 B profile，A 的主行会因缺 config 启动即 FAILED。**
+4. `memoryDir`/`skillRoots` 写绝对路径（会被 resolve 到 harness 进程 cwd，不是 profile 目录）。
+5. `node.token`：字面 token 最省事；用 `!!js process.env.X` 时变量必须存在于 **app 进程**环境——`setx` 后要托盘完全退出再启动才生效，cmd 里验证用 `echo %VAR%`（`$env:` 是 PowerShell 语法，cmd 只回显字面）。
+6. 生效与验证：**运行中的会话不会换组合**——改完 patch/装完包要重启 app、开新会话；Settings → 插件页看行状态，或看 `<memoryDir>\.clh-knowledge-sync\logs\` 与 `sync-state.json` 有没有新写入。
+
+### 故障排查
+
+- **`clh-knowledge-sync 主插件行未挂载（ctx.clhKnowledgeSync 不可用）`**：tools 行只 `inject: ['tools']`，主行 FAILED 它照样注册——`memory_search`/`memory_push`/`dss_*` 能出现、调用才报这个错。按序排查：
+  1. profile 对不对：报错会话用的 profile == 写了 config override 的 profile（任务/worktree 会话可能跑在别的 profile，profile 列表里没有的 hash 串是 session id，不是 profile）。
+  2. 行状态：Settings → 插件页看 `clh-knowledge-sync` 行的 FAILED 原文；或 `dsh.cmd --profile <name> --dump-config` 看组合后的行（`node.token` undefined 或行缺席一目了然）。
+  3. 最常见：`!!js process.env.X` 取不到 → token undefined → schema `required()` 拒 → 行 FAILED。换字面 token，或 `setx` 后完全重启 app。
+- **改了源码不生效**：`file:` 是拷贝——重建后要 `plugin remove` + `plugin add` 重装，否则 profile `node_modules` 里跑的还是旧副本（`link:` 相反）。
+- **会话里 `run_code` 报 `SetNamedSecurityInfoW failed (Win32 5)`**：宿主沙箱给工作目录授 ACL 被拒（目录属主/杀软），与本插件无关，换普通用户目录下的工作区验证。
 
 ## 配置参考
 
