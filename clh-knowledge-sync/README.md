@@ -150,7 +150,7 @@ npm run build && node demo/e2e-demo.mjs
 
 ## 新机器部署 checklist（Windows Desktop 实测）
 
-把仓库 clone 到任意目录（例如 `~/.dsh/plugins/cinlan-harness-plugin`）只是**存放源码**——该目录不会被运行时扫描，解析只认 dsh 安装目录 + profile `node_modules` + `$DSH_HOME/profiles/node_modules` 回退。真正安装按以下顺序：
+把仓库 clone 到任意目录（例如 `~/.dsh/plugins/cinlan-harness-plugin`）只是**存放源码**——该目录不会被运行时扫描，解析只认 dsh 安装目录 + profile `node_modules` + `$DSH_HOME/profiles/node_modules` 回退。**整仓 clone 是正常形态**：本仓库是 monorepo（根目录没有 `package.json`），只能整仓拉取；但 `plugin add` 的路径必须指到**子目录** `clh-knowledge-sync`，指到仓库根会以 not-a-package 失败；也不要直接 `plugin add <git URL>`——pnpm 会把整仓当成单个依赖拉取，同样不是可安装包。真正安装按以下顺序：
 
 1. `git pull` 到最新；`cd clh-knowledge-sync && npm install && npm run build`。
 2. `"<安装目录>\resources\runtime\cli\bin\dsh.cmd" plugin --profile <name> add "file:<本包绝对路径>"`（`dsh.cmd` 不在 PATH，用全路径；`plugin` 必须是第一个子命令）。报 `incompatible-version` 时按提示 `allow-version` 授精确豁免后重跑。
