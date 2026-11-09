@@ -158,7 +158,7 @@ npm run build && node demo/e2e-demo.mjs
 2. `"<安装目录>\resources\runtime\cli\bin\dsh.cmd" plugin --profile <name> add "file:<本包绝对路径>"`（`dsh.cmd` 不在 PATH，用全路径；`plugin` 必须是第一个子命令）。报 `incompatible-version` 时按提示 `allow-version` 授精确豁免后重跑。
 3. config override 写进**同一个 profile** 的 `cordis.patch.yml`（`- id: clh-knowledge-sync` 的 id-targeted 行即可，tools 行不用动）。**bundle 装进 A profile、override 写进 B profile，A 的主行会因缺 config 启动即 FAILED。**
 4. `memoryDir`/`skillRoots` 写绝对路径（会被 resolve 到 harness 进程 cwd，不是 profile 目录）；统一用 `~/.dsh/clh-knowledge-sync/{memory,skills}`——**自家插件数据目录一律 `clh-` 前缀**，别各机器各起各的目录名。
-5. `node.token`：字面 token 最省事；用 `!!js process.env.X` 时变量必须存在于 **app 进程**环境——`setx` 后要托盘完全退出再启动才生效，cmd 里验证用 `echo %VAR%`（`$env:` 是 PowerShell 语法，cmd 只回显字面）。
+5. `node.token` 直接写字面值（推荐）。`!!js process.env.X` 取的是 app 启动时的进程 env——`setx` 对运行中进程无效、应用内重启/自启/远程会话继承旧 env，实测「有时挂上有时挂不上」；只 CLI 场景才考虑。
 6. 生效与验证：**运行中的会话不会换组合**——改完 patch/装完包要重启 app、开新会话；Settings → 插件页看行状态，或看 `<memoryDir>\.clh-knowledge-sync\logs\` 与 `sync-state.json` 有没有新写入。
 
 ### 故障排查
@@ -166,7 +166,7 @@ npm run build && node demo/e2e-demo.mjs
 - **`clh-knowledge-sync 主插件行未挂载（ctx.clhKnowledgeSync 不可用）`**：tools 行只 `inject: ['tools']`，主行 FAILED 它照样注册——`memory_search`/`memory_push`/`dss_*` 能出现、调用才报这个错。按序排查：
   1. profile 对不对：报错会话用的 profile == 写了 config override 的 profile（任务/worktree 会话可能跑在别的 profile，profile 列表里没有的 hash 串是 session id，不是 profile）。
   2. 行状态：Settings → 插件页看 `clh-knowledge-sync` 行的 FAILED 原文；或 `dsh.cmd --profile <name> --dump-config` 看组合后的行（`node.token` undefined 或行缺席一目了然）。
-  3. 最常见：`!!js process.env.X` 取不到 → token undefined → schema `required()` 拒 → 行 FAILED。换字面 token，或 `setx` 后完全重启 app。
+  3. 最常见：`!!js process.env.X` 取不到 → token undefined → schema `required()` 拒 → 行 FAILED。**直接换字面 token**——`!!js` 取 app 启动时 env，重启方式不同结果不同，不稳定。
 - **改了源码不生效**：`file:` 是拷贝——重建后要 `plugin remove` + `plugin add` 重装，否则 profile `node_modules` 里跑的还是旧副本（`link:` 相反）。
 - **`plugin add` 报 `ERR_PNPM_UNEXPECTED_STORE`**：profile 现有 node_modules 链接的 store 与本次调用解析的 store 不一致（CLI 环境缺 `LOCALAPPDATA` 时 pnpm 回落 `~/.pnpm-store`）。首选在同一窗口 `$env:LOCALAPPDATA="$env:USERPROFILE\AppData\Local"; $env:npm_config_store_dir="$env:USERPROFILE\AppData\Local\pnpm\store\v11"` 后重跑；仍失败则 `cmd /c rmdir /s /q` 删 profile `node_modules` + 删 `pnpm-lock.yaml` 后重跑（**禁用 `Remove-Item -Recurse`**，会顺 junction 删 store 真实数据）。
 - **会话里 `run_code` 报 `SetNamedSecurityInfoW failed (Win32 5)`**：宿主沙箱给工作目录授 ACL 被拒（目录属主/杀软），与本插件无关，换普通用户目录下的工作区验证。

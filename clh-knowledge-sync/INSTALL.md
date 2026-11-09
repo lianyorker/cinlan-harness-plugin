@@ -113,7 +113,7 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
 
 - **override 必须写进会话实际用的那个 profile**——bundle 装进 A、override 写进 B，A 的主行缺 config 启动即 `invalid-config` FAILED（而 tools 行照样注册，所以工具能出现、调用才报错）。
 - `memoryDir`/`skillRoots` 必须绝对路径（相对路径会 resolve 到 harness 进程 cwd，不是 profile 目录）。
-- token 不想落盘可用 `!!js process.env.CLH_NODE_PEER_01_TOKEN`——但变量必须能被 **app 进程**继承：`setx` 后要【托盘完全退出再启动 app】才生效；cmd 里验证用 `echo %VAR%`（`$env:` 是 PowerShell 语法，cmd 只回显字面）。**字面 token 最省事**，首次装机建议直接用。
+- **token 直接写字面值**（推荐、确定性）。`!!js process.env.X` 只在 config 内求值、取的是 **app 启动那一刻的进程环境**：`setx` 对运行中的进程无效，Electron 应用内重启/开机自启/远程会话继承的都是旧 env——实测同一台机器「有时挂上有时挂不上」的根因就是它。除 CLI 且 env 可控外不要使用。
 
 ## 5. 生效与验证
 
