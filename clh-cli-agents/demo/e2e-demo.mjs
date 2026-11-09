@@ -11,14 +11,26 @@
  * stub 路径相对插件根解析 → 本脚本及 CLI 断言都以插件根为 cwd（package.json 的 e2e script 保证）。
  */
 import { spawn, spawnSync } from 'node:child_process'
-import { promises as fsp } from 'node:fs'
+import { existsSync, promises as fsp } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PKG_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DEMO_DIR = path.dirname(fileURLToPath(import.meta.url))
-const HARNESS_DIR = path.resolve(PKG_DIR, '..', '..', 'cinlan-harness')
-const CORDIS_BIN = path.join(HARNESS_DIR, 'vendor', 'cordis', 'bin.js')
+// mac 适配：优先 fork 源码树（Windows 开发机布局）；不存在时退回从官方安装版
+// app.asar 提取的运行时包目录（CLH_MAC_VENDOR 环境变量或默认 ../clh-mac-vendor）。
+let HARNESS_DIR = path.resolve(PKG_DIR, '..', '..', 'cinlan-harness')
+if (!existsSync(HARNESS_DIR)) {
+  HARNESS_DIR = process.env.CLH_MAC_VENDOR || path.resolve(PKG_DIR, '..', 'clh-mac-vendor')
+  console.log('[mac] fork 源码树不存在，改用提取的运行时包: ' + HARNESS_DIR)
+}
+const CORDIS_BIN = existsSync(path.join(HARNESS_DIR, 'vendor', 'cordis', 'bin.js'))
+  ? path.join(HARNESS_DIR, 'vendor', 'cordis', 'bin.js')
+  : path.join(HARNESS_DIR, 'cordis', 'bin.js')
+// mac 适配：loader 子包所在 node_modules 目录（fork 布局在 vendor/cordis 下，提取布局在 cordis 下）
+const CORDIS_NM = existsSync(path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules'))
+  ? path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules')
+  : path.join(HARNESS_DIR, 'cordis', 'node_modules')
 
 const results = []
 function assert(name, ok, detail) {
@@ -44,7 +56,7 @@ async function waitUntil(fn, { timeoutMs = 20000, every = 200, what = '条件' }
 async function ensureJunction(link, target) {
   await fsp.rm(link, { recursive: true, force: true })
   await fsp.mkdir(path.dirname(link), { recursive: true })
-  await fsp.symlink(target, link, 'junction')
+  await fsp.symlink(target, link, process.platform === 'win32' ? 'junction' : 'dir')
 }
 
 async function write(file, content) {
@@ -67,9 +79,9 @@ async function main() {
   // ---------- 准备：peer junction + demo 配置 ----------
   section('准备：junction 与配置')
   const peerTargets = {
-    '@deepseek-ai/cordis': path.join(HARNESS_DIR, 'vendor', 'cordis'),
-    '@deepseek-ai/schemastery': path.join(HARNESS_DIR, 'vendor', 'schemastery'),
-    '@deepseek-ai/dsh-tools': path.join(HARNESS_DIR, 'packages', 'core', 'tools'),
+    '@deepseek-ai/cordis': (existsSync(path.join(HARNESS_DIR, 'vendor', 'cordis')) ? path.join(HARNESS_DIR, 'vendor', 'cordis') : path.join(HARNESS_DIR, 'cordis')),
+    '@deepseek-ai/schemastery': (existsSync(path.join(HARNESS_DIR, 'vendor', 'schemastery')) ? path.join(HARNESS_DIR, 'vendor', 'schemastery') : path.join(HARNESS_DIR, 'schemastery')),
+    '@deepseek-ai/dsh-tools': (existsSync(path.join(HARNESS_DIR, 'packages', 'core', 'tools')) ? path.join(HARNESS_DIR, 'packages', 'core', 'tools') : path.join(HARNESS_DIR, 'dsh-tools')),
   }
   for (const [pkg, target] of Object.entries(peerTargets)) {
     await ensureJunction(path.join(PKG_DIR, 'node_modules', pkg), target)
@@ -225,8 +237,8 @@ async function main() {
   const nodeReal = path.join(DEMO_DIR, 'node-real')
   await write(path.join(nodeReal, 'package.json'), JSON.stringify({ name: '@demo/node-real', private: true, type: 'module' }, null, 2))
   await ensureJunction(path.join(nodeReal, 'node_modules', '@cinlan', 'clh-cli-agents'), PKG_DIR)
-  await ensureJunction(path.join(nodeReal, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-include'))
-  await ensureJunction(path.join(nodeReal, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'))
+  await ensureJunction(path.join(nodeReal, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(CORDIS_NM, '@deepseek-ai', 'cordis-plugin-include'))
+  await ensureJunction(path.join(nodeReal, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(CORDIS_NM, '@deepseek-ai', 'cordis-plugin-loader'))
   await write(path.join(nodeReal, 'cordis.yml'), [
     `- name: '@cinlan/clh-cli-agents'`,
     `  config:`,
@@ -261,8 +273,8 @@ async function main() {
   const nodeBad = path.join(DEMO_DIR, 'node-bad')
   await write(path.join(nodeBad, 'package.json'), JSON.stringify({ name: '@demo/node-bad', private: true, type: 'module' }, null, 2))
   await ensureJunction(path.join(nodeBad, 'node_modules', '@cinlan', 'clh-cli-agents'), PKG_DIR)
-  await ensureJunction(path.join(nodeBad, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-include'))
-  await ensureJunction(path.join(nodeBad, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'))
+  await ensureJunction(path.join(nodeBad, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(CORDIS_NM, '@deepseek-ai', 'cordis-plugin-include'))
+  await ensureJunction(path.join(nodeBad, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(CORDIS_NM, '@deepseek-ai', 'cordis-plugin-loader'))
   await write(path.join(nodeBad, 'cordis.yml'), [
     `- name: '@cinlan/clh-cli-agents'`,
     `  config:`,

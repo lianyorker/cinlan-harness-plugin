@@ -7,6 +7,19 @@
 import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import { SyncError } from './util.js';
+import { isVolatile } from '@deepseek-ai/cosmokit';
+/** mac/cordis 4.1 适配：volatile() 分组经 schema 校验后返回 frozen 引用（.get() 才是值）；
+ *  旧版 cordis 直接给普通对象。统一在此解包，双运行时兼容。 */
+function unwrapConfig(value) {
+    if (isVolatile(value)) return unwrapConfig(value.get());
+    if (Array.isArray(value)) return value.map(unwrapConfig);
+    if (value && typeof value === 'object') {
+        const out = {};
+        for (const [k, v] of Object.entries(value)) out[k] = unwrapConfig(v);
+        return out;
+    }
+    return value;
+}
 /** 由 schemastery 校验后的插件配置（结构同 NodeSyncConfig，字段可能带默认值）。 */
 export function buildConfigSchema(Schema) {
     const hubProfile = Schema.object({
@@ -61,6 +74,7 @@ function defaultPort(protocol) {
  * 并在引用不存在的 profile 或 token 为空时给出能直接定位问题的错误。
  */
 export function resolveNodeConfig(raw, cwd = process.cwd()) {
+    raw = unwrapConfig(raw);
     const problems = [];
     if (!raw.node?.id)
         problems.push('node.id 不能为空');

@@ -7,6 +7,20 @@
 import { promises as fsp } from 'node:fs'
 import path from 'node:path'
 import { SyncError } from './util.js'
+import { isVolatile } from '@deepseek-ai/cosmokit'
+
+/** mac/cordis 4.1 适配：volatile() 分组经 schema 校验后返回 frozen 引用（.get() 才是值）；
+ *  旧版 cordis 直接给普通对象。统一在此解包，双运行时兼容。 */
+function unwrapConfig(value: unknown): any {
+    if (isVolatile(value as object)) return unwrapConfig((value as any).get())
+    if (Array.isArray(value)) return value.map(unwrapConfig)
+    if (value && typeof value === 'object') {
+        const out: Record<string, any> = {}
+        for (const [k, v] of Object.entries(value)) out[k] = unwrapConfig(v)
+        return out
+    }
+    return value
+}
 
 // ---------------- 插件配置（cordis / Schemastery） ----------------
 
