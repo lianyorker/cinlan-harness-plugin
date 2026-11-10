@@ -10,6 +10,7 @@
 ## 0. 备齐三样东西
 
 - **节点 token**：hub `auth.nodeTokens` 里给本节点登记的值。
+- **管理员令牌（面板用，可选）**：hub 配置里的 `auth.adminToken`（本项目 hub 位于服务器 `/opt/clh-knowledge-sync/hub.config.json`，字面值或其引用的环境变量）。不配则「记忆库管理」面板提示『未配置管理员令牌』，同步与工具不受影响。**只写进本机 profile，勿提交进仓库。**
 - **数据目录（统一约定）**：`memoryDir`/`skillRoots` 用 `%USERPROFILE%\.dsh\clh-knowledge-sync\memory` 和 `%USERPROFILE%\.dsh\clh-knowledge-sync\skills`——**规范：自家插件数据目录一律 `clh-` 前缀**，所有机器同一约定，目录名不要自由发挥（实测出现过 `knowledge-sync`、`deepseek-sync` 各起各的，跨机排障时对不上号）。必须绝对路径。
 - **dsh.cmd 路径**：`<安装目录>\resources\runtime\cli\bin\dsh.cmd`——不在 PATH，必须全路径调用；`plugin` 必须是第一个子命令。
 
@@ -95,6 +96,7 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
           host: <hub 地址>
           port: 47610
           timeoutMs: 8000
+          adminToken: '<hub 的 auth.adminToken，仅面板审批用>'
     sync:
       auto: true
       intervalSec: 300
@@ -117,6 +119,7 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
 - `memoryDir`/`skillRoots` 必须绝对路径（相对路径会 resolve 到 harness 进程 cwd，不是 profile 目录）。
 - **token 直接写字面值**（推荐、确定性）。`!!js process.env.X` 只在 config 内求值、取的是 **app 启动那一刻的进程环境**：`setx` 对运行中的进程无效，Electron 应用内重启/开机自启/远程会话继承的都是旧 env——实测同一台机器「有时挂上有时挂不上」的根因就是它。除 CLI 且 env 可控外不要使用。
 - **配了 `sync.scope` 的，hub 侧 `auth.nodeTokens` 要把该 token 登记成对象形态**（`{token, scopes}` 含写 scope 授权），否则推送按越权 `invalid`；旧 string 形态 = 全 scope 授权，老 hub 不用动。
+- **`adminToken` 与 `node.token` 不是一回事**：`adminToken` 是 hub 管理员令牌，只用于面板审批（代理到 hub 的 `/api/v1/admin/*`）；`node.token` 是本节点身份。两者不能互相替代。
 
 ## 5. 生效与验证
 
@@ -138,5 +141,7 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
 | `clh-knowledge-sync 主插件行未挂载（ctx.clhKnowledgeSync 不可用）` | tools 行在但主行 FAILED：config 缺失、`!!js` env 取不到、override 写错 profile | Settings 插件页看该 FAILED 原文；按第 4 步逐条核对 |
 | 工具能调用但同步不动 / 配置改了不生效 | app 没重启、用的旧会话 | 托盘退出 → 重启 → 新会话 |
 | 改了 src 代码不生效 | `file:` 安装是拷贝 | `plugin remove` + `plugin add` 重装 |
+| 记忆库管理面板提示「未配置管理员令牌」 | `hub.profiles.<activeProfile>.adminToken` 未配置 | 按第 4 步在会话实际用的 profile 下补 `adminToken`，托盘退出后重启 |
+| 记忆库管理面板报 `transport failure ... HTTP 404`（`/api/clhKnowledgeSync/admin*`） | 主插件行未挂载，服务构造失败被静默吞掉，常见于 volatile 配置未解包的旧版 lib | 确认 `lib/config.js` 含 `unwrapVolatile`，`plugin remove` + `plugin add` 重装后重启 |
 | `npm run build` 报找不到 `@deepseek-ai/*` | 本机没有相邻 cinlan-harness 源码 | 不用构建，`lib/` 已入库（见第 2 步） |
 | 会话里 `run_code` 报 `SetNamedSecurityInfoW failed (Win32 5)` | 宿主沙箱给工作目录授 ACL 被拒，与本插件无关 | 换普通用户目录下的工作区 |
