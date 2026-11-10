@@ -29,6 +29,20 @@ export class HubClient {
     async health() {
         return this.request('GET', '/healthz', { auth: false });
     }
+    /**
+     * 管理员通道：与 request 相同，但 Bearer 换成 profiles.<p>.adminToken。
+     * 供 Remote 代理方法（面板审批/总库管理）调用；未配置 adminToken 时给可定位错误。
+     */
+    async adminRequest(method, pathName, opts = {}) {
+        if (!this.profile.adminToken) {
+            throw new SyncError('admin-token-missing', `hub.profiles.${this.profile.name}.adminToken 未配置：在插件设置的 Hub 配置里填入管理员令牌后重试`, { profile: this.profile.name });
+        }
+        return this.request(method, pathName, {
+            ...opts,
+            auth: false, // 不让 request 用 node token 覆盖下面的 admin 凭证
+            headers: { authorization: `Bearer ${this.profile.adminToken}` },
+        });
+    }
     async request(method, pathName, opts = {}) {
         const url = new URL(this.baseUrl() + pathName);
         for (const [k, v] of Object.entries(opts.query ?? {}))

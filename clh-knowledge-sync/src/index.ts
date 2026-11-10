@@ -36,10 +36,18 @@ export interface SyncServiceApi {
   hub: string
   push(force?: boolean, kind?: EntryKind): Promise<unknown>
   pull(kind?: EntryKind): Promise<unknown>
-  search(query: string, limit?: number): Promise<unknown>
+  search(query: string, limit?: number, opts?: SearchOpts): Promise<unknown>
   status(): Promise<unknown>
   doctor(): Promise<unknown>
   state(): unknown
+}
+
+/** 检索过滤参数：budget=token 预算截断（命中附正文）；since/before=ISO 时间过滤 updatedAt；expiredOnly=只看已过期 */
+export interface SearchOpts {
+  budget?: number
+  since?: string
+  before?: string
+  expiredOnly?: boolean
 }
 
 export class clhKnowledgeSyncService extends Service {
@@ -49,6 +57,17 @@ export class clhKnowledgeSyncService extends Service {
   private local!: LocalStore
   private engine!: SyncEngine
   private initialized = false
+  /**
+   * Typert Gateway 绑定：等价于 typert-protocol 的 bindTypertRemote 产物
+   * （本插件不依赖该包，手工构造同形 frozen 对象）。api/gateway 的 SRC 发现
+   * 靠它把 clhKnowledgeSync/* 端点认领进 /api RPC；仅 owner Peer 可调
+   * （无 resources 声明的方法对非 owner 一律 deny）。
+   */
+  readonly typertRemote: { readonly service: object; readonly serviceKey: string; readonly namespace: string } = Object.freeze({
+    service: this,
+    serviceKey: 'clhKnowledgeSync',
+    namespace: 'clhKnowledgeSync',
+  })
 
   constructor(ctx: Context, config: NodeSyncConfig | undefined) {
     super(ctx, 'clhKnowledgeSync')
@@ -155,8 +174,8 @@ export class clhKnowledgeSyncService extends Service {
     return this.engine.pullCycle(kind)
   }
 
-  search(query: string, limit?: number): Promise<unknown> {
-    return this.engine.search(query, limit)
+  search(query: string, limit?: number, opts: SearchOpts = {}): Promise<unknown> {
+    return this.engine.search(query, limit, opts)
   }
 
   status(): Promise<unknown> {
@@ -170,4 +189,74 @@ export class clhKnowledgeSyncService extends Service {
   state(): unknown {
     return this.engine.stateSnapshot()
   }
+
+  // ---- Typert Remote 代理方法：经 hub admin API（profiles.<p>.adminToken）给面板用 ----
+  // 方法签名参数即 wire 字段名（gateway 反射函数签名）；参数必须是简单标识符，
+  // 不得解构/默认值/rest。返回与参数都只允许 JSON-safe 值。
+
+  /** 待审批队列。 */
+  adminPending(): Promise<unknown> {
+    return this.client.adminRequest('GET', '/api/v1/admin/pending')
+  }
+
+  /** 已拒绝队列。 */
+  adminRejected(): Promise<unknown> {
+    return this.client.adminRequest('GET', '/api/v1/admin/rejected')
+  }
+
+  /** 审批决定。action = 'approve' | 'reject'；reject 必填 reason。 */
+  adminDecide(queueId: string, action: string, reason: string): Promise<unknown> {
+    if (action !== 'approve' && action !== 'reject') {
+      throw new SyncError('bad-request', `action 必须是 approve 或 reject，收到 ${String(action)}`)
+    }
+    if (action === 'reject' && !reason) {
+      throw new SyncError('reason-required', '拒绝审批必须给出 reason')
+    }
+    return this.client.adminRequest('POST', '/api/v1/admin/decisions', {
+      body: { queueId, action, reason: reason || undefined },
+    })
+  }
+
+  /** 总库轻量列表；kinds 传 'memory,skill' 的逗号串或空串，q 为包含过滤，scope 精确过滤（'' 或 '*' = 全部）。 */
+  adminEntries(kinds: string, q: string, scope: string): Promise<unknown> {
+    const query: Record<string, string> = {}
+    if (kinds) query.kinds = kinds
+    if (q) query.q = q
+    if (scope && scope !== '*') query.scope = scope
+    return this.client.adminRequest('GET', '/api/v1/admin/entries', { query })
+  }
+
+  /** 总库单条详情（含正文/文件）；scope 缺省为全局 ''——同 id 跨 scope 时必须传。 */
+  adminEntry(kind: string, id: string, scope: string): Promise<unknown> {
+    if (kind !== 'memory' && kind !== 'skill') {
+      throw new SyncError('bad-request', `kind 必须是 memory 或 skill，收到 ${String(kind)}`)
+    }
+    const s = scope || ''
+    return this.client.adminRequest('GET', `/api/v1/admin/entries/${kind}/${encodeURIComponent(id)}`, {
+      query: s ? { scope: s } : {},
+    })
+  }
+
+  /** 存储统计。 */
+  adminStats(): Promise<unknown> {
+    return this.client.adminRequest('GET', '/api/v1/admin/stats')
+  }
 }
+
+// Typert Gateway SRC 发现：把 admin* 方法标记为可经 /api 调用的 Remote 方法。
+// 等价于 @deepseek-ai/dsh-typert-protocol 的 @Remote 装饰器产物
+// （descriptor key 与 {version,methods} 形状一致）；本插件不依赖该包，直接写死。
+// 未列在此的方法（push/pull/search/status/doctor/state）不对客户端开放。
+Object.defineProperty(clhKnowledgeSyncService.prototype, '@deepseek-ai/dsh-typert-protocol/remote-methods', {
+  value: Object.freeze({
+    version: 1,
+    methods: Object.freeze([
+      { method: 'adminPending', invocation: Object.freeze({ kind: 'direct' }) },
+      { method: 'adminRejected', invocation: Object.freeze({ kind: 'direct' }) },
+      { method: 'adminDecide', invocation: Object.freeze({ kind: 'direct' }) },
+      { method: 'adminEntries', invocation: Object.freeze({ kind: 'direct' }) },
+      { method: 'adminEntry', invocation: Object.freeze({ kind: 'direct' }) },
+      { method: 'adminStats', invocation: Object.freeze({ kind: 'direct' }) },
+    ]),
+  }),
+})

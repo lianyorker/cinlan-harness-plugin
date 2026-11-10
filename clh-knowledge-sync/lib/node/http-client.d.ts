@@ -13,6 +13,14 @@ export declare class HubClient {
         service?: string;
         stats?: unknown;
     }>;
+    /**
+     * 管理员通道：与 request 相同，但 Bearer 换成 profiles.<p>.adminToken。
+     * 供 Remote 代理方法（面板审批/总库管理）调用；未配置 adminToken 时给可定位错误。
+     */
+    adminRequest<T>(method: 'GET' | 'POST' | 'PUT', pathName: string, opts?: {
+        body?: unknown;
+        query?: Record<string, string>;
+    }): Promise<T>;
     request<T>(method: 'GET' | 'POST' | 'PUT', pathName: string, opts?: {
         body?: unknown;
         headers?: Record<string, string>;

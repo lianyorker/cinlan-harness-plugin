@@ -17,6 +17,7 @@ import { LocalStore, type LocalMemoryItem, type LocalSkillBundle, type RemoteEnt
 
 export interface PushedRecord {
   kind: EntryKind
+  scope?: string
   hash: string
   queueId?: string
   status: 'pending' | 'approved' | 'rejected' | 'conflict' | 'published-duplicate' | 'invalid'
@@ -38,6 +39,9 @@ export interface SyncState {
 
 const STATE_FILE = 'sync-state.json'
 const MAX_CONFLICTS = 200
+
+/** pushed 状态键：scope 参与键名，跨 scope 同名条目各算各的；"" 保持旧格式兼容历史 state。 */
+const stateKey = (scope: string, baseId: string): string => (scope === '' ? baseId : `${scope}|${baseId}`)
 
 export interface CycleResult {
   operation: 'push' | 'status' | 'pull'
@@ -108,9 +112,10 @@ export class SyncEngine {
       ])
       const items: Array<{ kind: EntryKind; payload: Record<string, unknown> }> = []
 
+      const writeScope = this.cfg.writeScope
       if (!kindFilter || kindFilter === 'memory') {
         for (const m of memories) {
-          const rec = this.state.pushed[m.id]
+          const rec = this.state.pushed[stateKey(writeScope, m.id)]
           const unchanged = rec && rec.hash === m.hash && rec.status !== 'invalid'
           if (unchanged) continue
           items.push({
@@ -118,6 +123,7 @@ export class SyncEngine {
             payload: {
               kind: 'memory',
               id: m.id,
+              scope: writeScope,
               title: m.title,
               content: m.content,
               tags: m.tags,
@@ -134,13 +140,14 @@ export class SyncEngine {
       if (!kindFilter || kindFilter === 'skill') {
         for (const s of skills) {
           const id = `skill-${s.name}`
-          const rec = this.state.pushed[id]
+          const rec = this.state.pushed[stateKey(writeScope, id)]
           if (rec && rec.hash === s.hash && rec.status !== 'invalid') continue
           items.push({
             kind: 'skill',
             payload: {
               kind: 'skill',
               id: s.name,
+              scope: writeScope,
               title: s.name,
               description: s.description,
               files: s.files,
@@ -167,23 +174,25 @@ export class SyncEngine {
 
       let errors = 0
       for (const r of response.results) {
-        const stateId = r.kind === 'skill' ? `skill-${r.id}` : r.id
+        const rScope = r.scope ?? writeScope
+        const stateId = stateKey(rScope, r.kind === 'skill' ? `skill-${r.id}` : r.id)
+        const stateBaseId = r.kind === 'skill' ? `skill-${r.id}` : r.id
         if (r.status === 'queued') {
-          this.state.pushed[stateId] = { kind: r.kind, hash: items.find((i) => (i.kind === 'skill' ? `skill-${(i.payload as { id: string }).id}` : (i.payload as { id: string }).id) === stateId)?.payload.hash as string, queueId: r.queueId, status: 'pending', at: nowIso() }
+          this.state.pushed[stateId] = { kind: r.kind, scope: rScope, hash: items.find((i) => (i.kind === 'skill' ? `skill-${(i.payload as { id: string }).id}` : (i.payload as { id: string }).id) === stateBaseId)?.payload.hash as string, queueId: r.queueId, status: 'pending', at: nowIso() }
         } else if (r.status === 'duplicate') {
-          this.state.pushed[stateId] = { kind: r.kind, hash: this.hashOf(items, stateId), status: 'published-duplicate', version: r.serverVersion, at: nowIso() }
-          this.logger.info('push-duplicate', `条目已在总库且内容一致: ${r.id}`, { id: r.id, serverVersion: r.serverVersion })
+          this.state.pushed[stateId] = { kind: r.kind, scope: rScope, hash: this.hashOf(items, stateBaseId), status: 'published-duplicate', version: r.serverVersion, at: nowIso() }
+          this.logger.info('push-duplicate', `条目已在总库且内容一致: ${r.id}`, { id: r.id, scope: rScope, serverVersion: r.serverVersion })
         } else if (r.status === 'conflict') {
           // 冲突是已检测、已记日志、已保全副本的正常业务结果，不算指令失败
-          this.state.pushed[stateId] = { kind: r.kind, hash: this.hashOf(items, stateId), status: 'conflict', reason: r.message, version: r.serverVersion, at: nowIso() }
-          this.state.conflicts.push({ ts: nowIso(), direction: 'push', kind: r.kind, id: r.id, detail: r.message ?? 'version conflict' })
+          this.state.pushed[stateId] = { kind: r.kind, scope: rScope, hash: this.hashOf(items, stateBaseId), status: 'conflict', reason: r.message, version: r.serverVersion, at: nowIso() }
+          this.state.conflicts.push({ ts: nowIso(), direction: 'push', kind: r.kind, id: `${rScope ? rScope + ' ' : ''}${r.id}`, detail: r.message ?? 'version conflict' })
           this.logger.warn('push-conflict', `同步冲突（推送被拒）: ${r.id}: ${r.message}`, {
-            id: r.id, serverVersion: r.serverVersion, hint: '先 pull 合并，或将内容更新后重推；确认覆盖可用 push --force',
+            id: r.id, scope: rScope, serverVersion: r.serverVersion, hint: '先 pull 合并，或将内容更新后重推；确认覆盖可用 push --force',
           })
         } else {
           errors++
-          this.state.pushed[stateId] = { kind: r.kind, hash: this.hashOf(items, stateId), status: 'invalid', reason: r.message, at: nowIso() }
-          this.logger.error('push-invalid', `推送条目被校验拒绝: ${r.id}: ${r.message}`, { id: r.id })
+          this.state.pushed[stateId] = { kind: r.kind, scope: rScope, hash: this.hashOf(items, stateBaseId), status: 'invalid', reason: r.message, at: nowIso() }
+          this.logger.error('push-invalid', `推送条目被校验拒绝: ${r.id}: ${r.message}`, { id: r.id, scope: rScope })
         }
       }
       this.state.lastSyncAt = nowIso()
@@ -258,10 +267,10 @@ export class SyncEngine {
     const op = 'pull'
     try {
       const kinds: EntryKind[] = kindFilter ? [kindFilter] : ['memory', 'skill']
-      const resp = await this.client.request<{ entries: RemoteEntry[]; cursor: number; tombstones: Array<{ kind: EntryKind; id: string; seq: number; reason: string }> }>(
+      const resp = await this.client.request<{ entries: RemoteEntry[]; cursor: number; tombstones: Array<{ kind: EntryKind; id: string; scope?: string; seq: number; reason: string }> }>(
         'GET',
         '/api/v1/pull',
-        { query: { sinceSeq: String(this.state.cursor), kinds: kinds.join(',') } },
+        { query: { sinceSeq: String(this.state.cursor), kinds: kinds.join(','), scopes: this.cfg.readScopes.join(',') } },
       )
       const details: Array<Record<string, unknown>> = []
       let written = 0
@@ -308,18 +317,19 @@ export class SyncEngine {
       }
 
       for (const tomb of resp.tombstones) {
+        const tombScope = tomb.scope ?? ''
         if (tomb.kind === 'memory') {
-          const removedFile = await this.local.removeSharedMemory(tomb.id)
+          const removedFile = await this.local.removeSharedMemory(tomb.id, tombScope)
           if (removedFile) removed++
-          this.logger.info('pull-tombstone', `总库已清理记忆 "${tomb.id}"，本地共享副本${removedFile ? '已删除' : '不存在'}`, { reason: tomb.reason })
-          details.push({ id: tomb.id, kind: 'memory', status: removedFile ? 'removed' : 'absent', reason: tomb.reason })
+          this.logger.info('pull-tombstone', `总库已清理记忆 "${tomb.id}"（scope=${tombScope || '全局'}），本地共享副本${removedFile ? '已删除' : '不存在'}`, { reason: tomb.reason })
+          details.push({ id: tomb.id, scope: tombScope, kind: 'memory', status: removedFile ? 'removed' : 'absent', reason: tomb.reason })
         } else {
           const root = this.cfg.skillRoots[0]
           if (root) {
-            const r = await this.local.removeSyncedSkill(root, tomb.id)
+            const r = await this.local.removeSyncedSkill(root, tomb.id, tombScope)
             if (r === 'removed') removed++
-            this.logger.info('pull-tombstone', `总库已清理 skill "${tomb.id}"，本地处理: ${r}`, { reason: tomb.reason })
-            details.push({ id: tomb.id, kind: 'skill', status: r, reason: tomb.reason })
+            this.logger.info('pull-tombstone', `总库已清理 skill "${tomb.id}"（scope=${tombScope || '全局'}），本地处理: ${r}`, { reason: tomb.reason })
+            details.push({ id: tomb.id, scope: tombScope, kind: 'skill', status: r, reason: tomb.reason })
           }
         }
       }
@@ -343,9 +353,19 @@ export class SyncEngine {
 
   // ---------------- 检索 / 探测 ----------------
 
-  async search(query: string, limit = 20): Promise<{ query: string; total: number; results: Array<Record<string, unknown>> }> {
+  async search(
+    query: string,
+    limit = 20,
+    opts: { budget?: number; since?: string; before?: string; expiredOnly?: boolean } = {},
+  ): Promise<{ query: string; total: number; results: Array<Record<string, unknown>> }> {
     const resp = await this.client.request<{ query: string; total: number; results: Array<Record<string, unknown>> }>('GET', '/api/v1/search', {
-      query: { q: query, limit: String(limit) },
+      query: {
+        q: query, limit: String(limit), scopes: this.cfg.readScopes.join(','),
+        ...(opts.budget !== undefined ? { budget: String(opts.budget) } : {}),
+        ...(opts.since ? { since: opts.since } : {}),
+        ...(opts.before ? { before: opts.before } : {}),
+        ...(opts.expiredOnly ? { expiredOnly: 'true' } : {}),
+      },
     })
     return resp
   }

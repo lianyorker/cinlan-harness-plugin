@@ -11,6 +11,7 @@ import { promises as fsp } from 'node:fs'
 import { createLogger, ensureLogDir, logFilePathFor } from '../logger.js'
 import { loadHubConfig, resolveNodeConfig, interpolateEnv, type HubConfig, type NodeSyncConfig, type ResolvedNodeConfig } from '../config.js'
 import { SyncError, nowIso } from '../util.js'
+import { isValidScope } from '../scope.js'
 import { HubClient } from '../node/http-client.js'
 import { LocalStore } from '../node/local-store.js'
 import { SyncEngine } from '../node/engine.js'
@@ -213,7 +214,7 @@ async function runAdmin(args: CliArgs): Promise<number> {
     case 'cleanup-decide': {
       const action = args.positional[2]
       if (action !== 'approve' && action !== 'reject') {
-        console.error('用法: admin cleanup-decide <approve|reject> --ids kind:id,... [--reason ...]')
+        console.error('用法: admin cleanup-decide <approve|reject> --ids kind:id,... [--reason ...]（scoped 条目用 scope|kind:id）')
         return 2
       }
       const idsFlag = flagValue(args.flags, 'ids')
@@ -221,10 +222,7 @@ async function runAdmin(args: CliArgs): Promise<number> {
         console.error('缺少 --ids kind:id,kind:id')
         return 2
       }
-      const targets = idsFlag.split(',').filter(Boolean).map((s) => {
-        const [kind, id] = s.split(':')
-        return { kind: kind as 'memory' | 'skill', id: id! }
-      })
+      const targets = parseTargets(idsFlag.split(',').filter(Boolean))
       const reason = flagValue(args.flags, 'reason') ?? ''
       out(await client.request('POST', '/api/v1/admin/cleanup/decide', { headers: adminHeaders, body: { ids: targets, action, reason } }))
       return 0
@@ -235,14 +233,17 @@ async function runAdmin(args: CliArgs): Promise<number> {
   }
 }
 
-function parseTargets(list: string[]): Array<{ kind: 'memory' | 'skill'; id: string }> {
-  const out: Array<{ kind: 'memory' | 'skill'; id: string }> = []
+function parseTargets(list: string[]): Array<{ kind: 'memory' | 'skill'; id: string; scope: string }> {
+  const out: Array<{ kind: 'memory' | 'skill'; id: string; scope: string }> = []
   for (const item of list) {
-    const [kind, id] = item.split(':')
-    if ((kind !== 'memory' && kind !== 'skill') || !id) {
-      throw new SyncError('bad-request', `条目参数应为 kind:id（memory|skill），收到 "${item}"`)
+    // 形如 kind:id（全局）或 scope|kind:id（scoped 条目；scope 自带冒号，用 | 分隔）
+    const bar = item.indexOf('|')
+    const [scope, pair] = bar >= 0 ? [item.slice(0, bar), item.slice(bar + 1)] : ['', item]
+    const [kind, id] = pair.split(':')
+    if ((kind !== 'memory' && kind !== 'skill') || !id || !isValidScope(scope)) {
+      throw new SyncError('bad-request', `条目参数应为 kind:id 或 scope|kind:id（memory|skill），收到 "${item}"`)
     }
-    out.push({ kind, id })
+    out.push({ kind, id, scope })
   }
   return out
 }
@@ -264,10 +265,11 @@ function printUsage(): void {
   clh-knowledge-sync admin --hub-config <hub.config.json> pending|stats
   clh-knowledge-sync admin --hub-config <hub.config.json> decide <queueId> <approve|reject> [原因]
   clh-knowledge-sync admin --hub-config <hub.config.json> cleanup-scan [--older-than-days=N] [--expired-only]
-  clh-knowledge-sync admin --hub-config <hub.config.json> cleanup-propose kind:id,... --reason=...
+  clh-knowledge-sync admin --hub-config <hub.config.json> cleanup-propose kind:id|scope|kind:id,... --reason=...
   clh-knowledge-sync admin --hub-config <hub.config.json> cleanup-flagged
-  clh-knowledge-sync admin --hub-config <hub.config.json> cleanup-decide <approve|reject> --ids kind:id,... [--reason=...]
+  clh-knowledge-sync admin --hub-config <hub.config.json> cleanup-decide <approve|reject> --ids kind:id|scope|kind:id,... [--reason=...]
 
+scoped 条目目标写成 scope|kind:id（如 proj:alpha:mod:web|memory:mem-x）；不带前缀即全局 ""。
 说明: ${nowIso()} 时点状态以 status 输出为准；审批被拒时 status 会带 reason。`)
 }
 

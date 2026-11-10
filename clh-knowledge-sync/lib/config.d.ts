@@ -6,6 +6,8 @@ interface HubProfileConfig {
     basePath?: string;
     timeoutMs?: number;
     token?: string;
+    /** 可选：hub 管理员令牌。配置后插件可用 Remote 方法代理审批/总库管理请求（面板用）。 */
+    adminToken?: string;
     tls?: {
         rejectUnauthorized?: boolean;
         caFile?: string;
@@ -27,6 +29,10 @@ export interface NodeSyncConfig {
         memoryDir: string;
         skillRoots: string[];
         stateDirName: string;
+        /** 写入作用域：""=全局、proj:<p>、proj:<p>:mod:<m>；节点所有 push 都进这个 scope。 */
+        scope?: string;
+        /** 读取作用域列表；为空时自动取 sync.scope 的继承闭包（""+proj+mod）。 */
+        readScopes?: string[];
     };
     oneshot: {
         enabled: boolean;
@@ -48,6 +54,8 @@ export interface ResolvedProfile {
     basePath: string;
     timeoutMs: number;
     token: string;
+    /** 可选 hub 管理员令牌（面板审批通道用）；缺省时 admin* Remote 方法报明确错误。 */
+    adminToken?: string;
     rejectUnauthorized: boolean;
     caFile?: string;
 }
@@ -60,6 +68,10 @@ export interface ResolvedNodeConfig {
     syncOnStart: boolean;
     memoryDir: string;
     skillRoots: string[];
+    /** 写作用域（push 目标）。 */
+    writeScope: string;
+    /** 读作用域（pull/search 可见集合，已是展开后的精确 scope 列表）。 */
+    readScopes: string[];
     stateDir: string;
     logLevel: string;
     logDir: string;
@@ -74,7 +86,7 @@ export interface ResolvedNodeConfig {
  * schema 已保证必填项存在；这里负责解析激活 profile、补默认端口、路径绝对化，
  * 并在引用不存在的 profile 或 token 为空时给出能直接定位问题的错误。
  */
-export declare function resolveNodeConfig(raw: NodeSyncConfig, cwd?: string): ResolvedNodeConfig;
+export declare function resolveNodeConfig(input: NodeSyncConfig, cwd?: string): ResolvedNodeConfig;
 export interface HubListenConfig {
     protocol: 'http' | 'https';
     host: string;
@@ -84,11 +96,16 @@ export interface HubListenConfig {
         keyFile?: string;
     };
 }
+/** 节点令牌 + 作用域授权；scopes 为 grant 列表（scope 精确值或 "*"/"proj:x:*" 通配）。 */
+export interface HubNodeCredential {
+    token: string;
+    scopes: string[];
+}
 export interface HubConfig {
     listen: HubListenConfig;
     auth: {
         adminToken: string;
-        nodeTokens: Record<string, string>;
+        nodeTokens: Record<string, HubNodeCredential>;
     };
     dataDir: string;
     limits: {

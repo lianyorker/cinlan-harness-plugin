@@ -21,7 +21,7 @@ clh-knowledge-sync/
 ├── client.js             # 手写 __ModuleLoader__ 浏览器包：Settings → DeepSeek 同步 配置页
 ├── config/               # 示例配置（内网 http / 外网 https / 节点双 profile）
 ├── cordis.patch.yml      # 组合包补丁：向 profile 插入服务行 + 工具行
-└── demo/                 # 端到端验收（node demo/e2e-demo.mjs，18 项断言）
+└── demo/                 # 端到端验收：e2e-demo.mjs（cordis 全链路）+ scope-smoke.mjs（scope 隔离）
 ```
 
 ## 快速开始
@@ -43,6 +43,8 @@ node bin/hub.js --config config/hub.example.json
 ```
 
 外网部署用 `config/hub.example.extranet.json`：`protocol: "https"` + `tls.certFile/keyFile`，另需 `DSS_TLS_CERT`、`DSS_TLS_KEY`。token 也可直接写进配置（不建议提交到版本库）。
+
+`auth.nodeTokens` 兼容两种形态：旧 string（`"node": "<token>"`）= 全 scope 授权；新对象（`{"token": ..., "scopes": [...]}`）= 按授权集隔离，scope 值可为 `''`（全局）、`proj:<名>`、`proj:<名>:mod:<名>`、通配 `*`/`proj:*`/`proj:<名>:*`。
 
 ### 3. 节点接入
 
@@ -78,6 +80,8 @@ clh plugin --profile <name> add file:<本包路径>
       intervalSec: 300
       memoryDir: ./memory            # 本地记忆目录（*.md，frontmatter id/expiry/tags）
       skillRoots: ['./skills']       # 本地 skills 目录（每个子目录一个 skill，含 SKILL.md）
+      scope: ''                      # 写入作用域：''=全局、proj:<名>、proj:<名>:mod:<名>
+      readScopes: []                 # 可读作用域；缺省自动取 scope 的祖先闭包
 ```
 
 内网 / 外网切换：改 `hub.activeProfile` 即可，两套地址互不影响；缺 token 或 profile 不存在时配置校验直接报错（列全所有问题），不会静默启动。
@@ -98,6 +102,16 @@ clh plugin --profile <name> add file:<本包路径>
 - **同 id 不同内容**：推送返回 `conflict`（带 serverVersion），本地日志 WARN 并记录 conflicts；拉取侧把总库版本保全为 `conflicts/` 下的冲突副本，不覆盖本地。
 - **审批回读**：被拒条目 status 变 `rejected` 并带 reason；批准条目带 `version`。
 
+### 4.1 作用域（scope，多项目隔离）
+
+条目按 `scope` 分层命名空间隔离：`''` 全局、`proj:<项目>`、`proj:<项目>:mod:<模块>`。同 id 的条目可在不同 scope 下并存（hub 内部键 = `scope|kind:id`），多项目共用一个 hub 时不再互相覆盖。
+
+- **节点写**：所有 push 归到 `sync.scope`；hub 按该节点 token 的授权集校验（越权 → `invalid`，不静默改 scope）。
+- **节点读**：pull/search 只回 `sync.readScopes` 可见范围；缺省 = 写 scope 的祖先闭包（mod 层节点可读 `''`+`proj`+`mod` 三层）。授权本身**不隐式继承**——想读全局层必须在 token 授权或 readScopes 里显式含 `''`；服务端再做 请求∩授权 求交。
+- **本地落盘**：拉取的共享记忆写 `memoryDir/shared/<scope 层级>/`（`''` 直接落 `shared/` 根，兼容旧布局）；拉取的 skill 写 `skillRoots[0]/<scope 层级>/<name>/`；tombstone 按 scope 精确删除。
+- **审批/管理**：admin 全 scope 可见；`GET /api/v1/admin/entries?scope=<s>` 精确过滤，`/admin/entries/{kind}/{id}?scope=<s>` 消歧取详情；cleanup 目标可带 `scope`。
+- **迁移**：scope 引入前的 hub 数据（无 scope 字段）加载时归 `''` 全局，旧节点/旧配置行为不变（旧 token = `['*']`）。
+
 ### 5. 审批与清理（管理员）
 
 REST（`/api/v1/admin/*`，Bearer adminToken）或 CLI：
@@ -108,6 +122,7 @@ clh-knowledge-sync admin --hub-config hub.config.json decide <queueId> approve|r
 clh-knowledge-sync admin --hub-config hub.config.json cleanup-scan [--older-than-days=N] [--expired-only]
 clh-knowledge-sync admin --hub-config hub.config.json cleanup-propose memory:mem-xxx --reason=过期
 clh-knowledge-sync admin --hub-config hub.config.json cleanup-decide approve --ids memory:mem-xxx --reason=确认清理
+# scoped 条目：目标写成 scope|kind:id（如 --ids 'proj:alpha:mod:web|memory:mem-x'），不带前缀即全局 ""
 clh-knowledge-sync admin --hub-config hub.config.json stats
 ```
 
@@ -121,7 +136,7 @@ clh-knowledge-sync admin --hub-config hub.config.json stats
 
 | 工具 | 作用 |
 |---|---|
-| `dss_search` | 检索总库已发布内容（标题/描述/正文/标签打分） |
+| `dss_search` | 检索总库已发布内容（标题/描述/正文/标签打分）；`budget` 按 token 预算截断且命中附正文（灌 context 用），`since`/`before`/`expiredOnly` 时态过滤 |
 | `dss_pull` | 拉取共享内容到本地 `memory/shared/` 与 `skills/`（带来源标记 `.clh-knowledge-sync.json`） |
 | `dss_push` | 手动推送本地记忆/skills |
 | `dss_status` | 查看同步状态与审批结果 |
@@ -139,9 +154,12 @@ clh-knowledge-sync admin --hub-config hub.config.json stats
 
 ```bash
 npm run build && node demo/e2e-demo.mjs
+npm run build && node demo/scope-smoke.mjs   # scope 隔离专项
 ```
 
 端到端 demo 用真实 cordis 加载插件（三个节点 + 一个 hub）：18 项断言覆盖 连接→自动推送→审批门（未审批不可读）→检索→手动推送/冲突→跨节点拉取（含 skill 来源标记）→审批回读→批准后拉取→清理扫描/提议/审批→tombstone 联动删除→连接失败退出码→审计日志→admin CLI。当前 18/18 PASS（本机 Node 24，Windows）。
+
+`demo/scope-smoke.mjs` 为 scope 隔离专项（直接驱动 lib/ 产物，不依赖 cordis）：47 项断言覆盖 scope 语义→config 校验→hub HTTP 授权矩阵（5 种令牌形态 × push/pull/search/entry）→旧数据迁移→engine 端到端（scoped 落盘 + tombstone）。当前 47/47 PASS。
 
 ### 已验证 / 未验证
 

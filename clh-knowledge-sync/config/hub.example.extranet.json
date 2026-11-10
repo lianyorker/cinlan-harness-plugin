@@ -12,7 +12,10 @@
     "adminToken": "${DSS_ADMIN_TOKEN}",
     "nodeTokens": {
       "node-a": "${DSS_TOKEN_NODE_A}",
-      "node-b": "${DSS_TOKEN_NODE_B}"
+      "node-b": {
+        "token": "${DSS_TOKEN_NODE_B}",
+        "scopes": ["", "proj:*"]
+      }
     }
   },
   "dataDir": "./hub-data",

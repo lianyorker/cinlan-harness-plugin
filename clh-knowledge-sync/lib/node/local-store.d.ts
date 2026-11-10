@@ -17,6 +17,8 @@ export interface LocalSkillBundle {
 export interface RemoteMemoryEntry {
     kind: 'memory';
     id: string;
+    /** 条目所属作用域；旧 hub 数据缺省视为全局 ""。 */
+    scope?: string;
     title: string;
     content?: string;
     tags: string[];
@@ -31,6 +33,7 @@ export interface RemoteMemoryEntry {
 export interface RemoteSkillEntry {
     kind: 'skill';
     id: string;
+    scope?: string;
     title: string;
     description?: string;
     files?: Array<{
@@ -53,7 +56,7 @@ export declare class LocalStore {
     /** 扫描本地记忆（*.md + entries/*.json，跳过 shared/ 与状态目录）。 */
     scanMemory(): Promise<LocalMemoryItem[]>;
     writeSharedMemory(entry: RemoteMemoryEntry): Promise<string>;
-    removeSharedMemory(id: string): Promise<boolean>;
+    removeSharedMemory(id: string, scope?: string): Promise<boolean>;
     writeConflictMemory(entry: RemoteMemoryEntry): Promise<string>;
     scanSkillRoot(root: string): Promise<LocalSkillBundle[]>;
     scanSkills(): Promise<LocalSkillBundle[]>;
@@ -71,6 +74,6 @@ export declare class LocalStore {
     }>;
     private writeBundleDir;
     /** 删除本插件拉取的 skill（有来源标记才删；本地手写不动，只告警）。 */
-    removeSyncedSkill(root: string, name: string): Promise<'removed' | 'kept-local' | 'not-found'>;
+    removeSyncedSkill(root: string, name: string, scope?: string): Promise<'removed' | 'kept-local' | 'not-found'>;
     private copyTree;
 }

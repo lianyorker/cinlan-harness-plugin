@@ -14,6 +14,7 @@
  */
 import { promises as fsp } from 'node:fs';
 import path from 'node:path';
+import { scopeFilePrefix, scopePathParts } from '../scope.js';
 import { SyncError, atomicWriteFile, contentHash, ensureDir, formatMemoryMarkdown, isTextFile, memoryHashOf, memoryIdFor, nowIso, parseFrontmatter, pathExists, readJson, removePath, validateSkillName, walkFiles, writeJson, } from '../util.js';
 export class LocalStore {
     cfg;
@@ -89,7 +90,8 @@ export class LocalStore {
         return items;
     }
     async writeSharedMemory(entry) {
-        const sharedDir = path.join(this.cfg.memoryDir, 'shared');
+        // shared/<scope 目录层级>/<id>.md；"" 无子目录（兼容旧布局）
+        const sharedDir = path.join(this.cfg.memoryDir, 'shared', ...scopePathParts(entry.scope ?? ''));
         const file = path.join(sharedDir, `${entry.id}.md`);
         await atomicWriteFile(file, formatMemoryMarkdown({
             id: entry.id,
@@ -104,8 +106,8 @@ export class LocalStore {
         }));
         return file;
     }
-    async removeSharedMemory(id) {
-        const file = path.join(this.cfg.memoryDir, 'shared', `${id}.md`);
+    async removeSharedMemory(id, scope = '') {
+        const file = path.join(this.cfg.memoryDir, 'shared', ...scopePathParts(scope), `${id}.md`);
         if (await pathExists(file)) {
             await removePath(file);
             return true;
@@ -114,7 +116,7 @@ export class LocalStore {
     }
     async writeConflictMemory(entry) {
         const dir = path.join(this.cfg.stateDir, 'conflicts', 'memory');
-        const file = path.join(dir, `${entry.id}-v${entry.version}-${Date.now()}.md`);
+        const file = path.join(dir, `${scopeFilePrefix(entry.scope ?? '')}${entry.id}-v${entry.version}-${Date.now()}.md`);
         await atomicWriteFile(file, formatMemoryMarkdown({
             id: entry.id,
             title: entry.title,
@@ -217,7 +219,8 @@ export class LocalStore {
         const nameErr = validateSkillName(entry.id);
         if (nameErr)
             throw new SyncError('invalid-skill', `远端 skill 名称非法: ${nameErr}`);
-        const bundleDir = path.join(root, entry.id);
+        // skillRoots[0]/<scope 目录层级>/<name>；"" 直达根（兼容旧布局）
+        const bundleDir = path.join(root, ...scopePathParts(entry.scope ?? ''), entry.id);
         const markerFile = path.join(bundleDir, '.clh-knowledge-sync.json');
         let localHash = null;
         if (await pathExists(path.join(bundleDir, 'SKILL.md'))) {
@@ -235,7 +238,7 @@ export class LocalStore {
                 return { status: 'unchanged', dir: bundleDir };
             }
             if (!opts.force) {
-                const backupDir = path.join(this.cfg.stateDir, 'conflicts', 'skills', `${entry.id}-local-${Date.now()}`);
+                const backupDir = path.join(this.cfg.stateDir, 'conflicts', 'skills', `${scopeFilePrefix(entry.scope ?? '')}${entry.id}-local-${Date.now()}`);
                 await fsp.mkdir(bundleDir, { recursive: true });
                 await this.copyTree(bundleDir, backupDir);
                 this.logger.warn('skill-conflict', `本地 skill 与远端版本不同，已备份本地副本后写入远端版本`, {
@@ -267,8 +270,8 @@ export class LocalStore {
         }
     }
     /** 删除本插件拉取的 skill（有来源标记才删；本地手写不动，只告警）。 */
-    async removeSyncedSkill(root, name) {
-        const bundleDir = path.join(root, name);
+    async removeSyncedSkill(root, name, scope = '') {
+        const bundleDir = path.join(root, ...scopePathParts(scope), name);
         const markerFile = path.join(bundleDir, '.clh-knowledge-sync.json');
         if (!(await pathExists(path.join(bundleDir, 'SKILL.md'))))
             return 'not-found';

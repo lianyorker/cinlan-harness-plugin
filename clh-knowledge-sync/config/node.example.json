@@ -30,7 +30,9 @@
     "syncOnStart": true,
     "memoryDir": "./memory",
     "skillRoots": ["./skills"],
-    "stateDirName": ".clh-knowledge-sync"
+    "stateDirName": ".clh-knowledge-sync",
+    "scope": "",
+    "readScopes": []
   },
   "oneshot": {
     "enabled": false,

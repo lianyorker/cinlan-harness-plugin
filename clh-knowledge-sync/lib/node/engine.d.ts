@@ -5,6 +5,7 @@ import { HubClient } from './http-client.js';
 import { LocalStore } from './local-store.js';
 export interface PushedRecord {
     kind: EntryKind;
+    scope?: string;
     hash: string;
     queueId?: string;
     status: 'pending' | 'approved' | 'rejected' | 'conflict' | 'published-duplicate' | 'invalid';
@@ -69,7 +70,12 @@ export declare class SyncEngine {
         details?: Array<Record<string, unknown>>;
     }>;
     private findLocalMemory;
-    search(query: string, limit?: number): Promise<{
+    search(query: string, limit?: number, opts?: {
+        budget?: number;
+        since?: string;
+        before?: string;
+        expiredOnly?: boolean;
+    }): Promise<{
         query: string;
         total: number;
         results: Array<Record<string, unknown>>;

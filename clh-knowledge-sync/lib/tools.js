@@ -19,10 +19,19 @@ export function apply(ctx) {
         parameters: {
             query: { type: 'string', required: true, description: '检索关键词，可多个词' },
             limit: { type: 'number', description: '返回条数上限，默认 20' },
+            budget: { type: 'number', description: 'token 预算：按打分从高到低累计填满（命中附正文），给 context 注入用' },
+            since: { type: 'string', description: '只检索 updatedAt 在该时间之后的条目，ISO 时间（如 2026-11-01）' },
+            before: { type: 'string', description: '只检索 updatedAt 在该时间之前的条目，ISO 时间' },
+            expiredOnly: { type: 'boolean', description: '只检索已过 expires 的条目' },
         },
         output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: asText(value) }] },
         async execute(args) {
-            return asText(await svc(ctx).search(args.query, args.limit));
+            return asText(await svc(ctx).search(args.query, args.limit, {
+                budget: args.budget,
+                since: args.since,
+                before: args.before,
+                expiredOnly: args.expiredOnly,
+            }));
         },
     }));
     ctx.tools.register(defineTool({

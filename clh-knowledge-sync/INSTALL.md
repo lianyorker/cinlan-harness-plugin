@@ -102,6 +102,8 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
       memoryDir: 'C:\Users\<user>\.dsh\clh-knowledge-sync\memory'      # ← 统一约定 clh- 前缀，勿改
       skillRoots:
         - 'C:\Users\<user>\.dsh\clh-knowledge-sync\skills'             # ← 统一约定 clh- 前缀，勿改
+      # scope: 'proj:<项目>'            # 多项目共用 hub 时给本机定写入命名空间；不配=全局
+      # readScopes: []                  # 可读范围；缺省自动取 scope 的祖先闭包
     oneshot:
       enabled: false
       commands: []
@@ -114,6 +116,7 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
 - **override 必须写进会话实际用的那个 profile**——bundle 装进 A、override 写进 B，A 的主行缺 config 启动即 `invalid-config` FAILED（而 tools 行照样注册，所以工具能出现、调用才报错）。
 - `memoryDir`/`skillRoots` 必须绝对路径（相对路径会 resolve 到 harness 进程 cwd，不是 profile 目录）。
 - **token 直接写字面值**（推荐、确定性）。`!!js process.env.X` 只在 config 内求值、取的是 **app 启动那一刻的进程环境**：`setx` 对运行中的进程无效，Electron 应用内重启/开机自启/远程会话继承的都是旧 env——实测同一台机器「有时挂上有时挂不上」的根因就是它。除 CLI 且 env 可控外不要使用。
+- **配了 `sync.scope` 的，hub 侧 `auth.nodeTokens` 要把该 token 登记成对象形态**（`{token, scopes}` 含写 scope 授权），否则推送按越权 `invalid`；旧 string 形态 = 全 scope 授权，老 hub 不用动。
 
 ## 5. 生效与验证
 

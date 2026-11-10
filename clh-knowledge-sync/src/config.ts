@@ -7,6 +7,7 @@
 import { promises as fsp } from 'node:fs'
 import path from 'node:path'
 import { SyncError } from './util.js'
+import { isValidGrant, isValidScope, scopeAncestors } from './scope.js'
 
 // ---------------- 插件配置（cordis / Schemastery） ----------------
 
@@ -20,6 +21,8 @@ interface HubProfileConfig {
   basePath?: string
   timeoutMs?: number
   token?: string
+  /** 可选：hub 管理员令牌。配置后插件可用 Remote 方法代理审批/总库管理请求（面板用）。 */
+  adminToken?: string
   tls?: { rejectUnauthorized?: boolean; caFile?: string }
 }
 
@@ -33,6 +36,10 @@ export interface NodeSyncConfig {
     memoryDir: string
     skillRoots: string[]
     stateDirName: string
+    /** 写入作用域：""=全局、proj:<p>、proj:<p>:mod:<m>；节点所有 push 都进这个 scope。 */
+    scope?: string
+    /** 读取作用域列表；为空时自动取 sync.scope 的继承闭包（""+proj+mod）。 */
+    readScopes?: string[]
   }
   oneshot: { enabled: boolean; commands: string[]; resultFile: string }
   log: { level: string; dir: string }
@@ -47,6 +54,7 @@ export function buildConfigSchema(Schema: AnySchema): AnySchema {
     basePath: Schema.string().default(''),
     timeoutMs: Schema.number().default(8000),
     token: Schema.string().role('secret'),
+    adminToken: Schema.string().role('secret'),
     tls: Schema.object({
       rejectUnauthorized: Schema.boolean().default(true),
       caFile: Schema.string(),
@@ -72,6 +80,8 @@ export function buildConfigSchema(Schema: AnySchema): AnySchema {
       memoryDir: Schema.string().required(),
       skillRoots: Schema.array(Schema.string()).default([]),
       stateDirName: Schema.string().default('.clh-knowledge-sync'),
+      scope: Schema.string().default(''),
+      readScopes: Schema.array(Schema.string()).default([]),
     }).required().volatile(),
     oneshot: Schema.object({
       enabled: Schema.boolean().default(false),
@@ -93,6 +103,8 @@ export interface ResolvedProfile {
   basePath: string
   timeoutMs: number
   token: string
+  /** 可选 hub 管理员令牌（面板审批通道用）；缺省时 admin* Remote 方法报明确错误。 */
+  adminToken?: string
   rejectUnauthorized: boolean
   caFile?: string
 }
@@ -106,6 +118,10 @@ export interface ResolvedNodeConfig {
   syncOnStart: boolean
   memoryDir: string
   skillRoots: string[]
+  /** 写作用域（push 目标）。 */
+  writeScope: string
+  /** 读作用域（pull/search 可见集合，已是展开后的精确 scope 列表）。 */
+  readScopes: string[]
   stateDir: string
   logLevel: string
   logDir: string
@@ -116,12 +132,22 @@ function defaultPort(protocol: string): number {
   return protocol === 'https' ? 443 : 80
 }
 
+function unwrapVolatile<T extends object>(input: T): T {
+  return Object.fromEntries(
+    Object.entries(input ?? {}).map(([key, value]) => [
+      key,
+      typeof (value as { get?: unknown } | undefined)?.get === 'function' ? (value as { get(): unknown }).get() : value,
+    ]),
+  ) as T
+}
+
 /**
  * 归并插件原始配置为运行时配置。
  * schema 已保证必填项存在；这里负责解析激活 profile、补默认端口、路径绝对化，
  * 并在引用不存在的 profile 或 token 为空时给出能直接定位问题的错误。
  */
-export function resolveNodeConfig(raw: NodeSyncConfig, cwd = process.cwd()): ResolvedNodeConfig {
+export function resolveNodeConfig(input: NodeSyncConfig, cwd = process.cwd()): ResolvedNodeConfig {
+  const raw = unwrapVolatile(input)
   const problems: string[] = []
   if (!raw.node?.id) problems.push('node.id 不能为空')
   const token = raw.node?.token ?? ''
@@ -148,9 +174,22 @@ export function resolveNodeConfig(raw: NodeSyncConfig, cwd = process.cwd()): Res
   }
 
   if (!raw.sync?.memoryDir) problems.push('sync.memoryDir 不能为空')
+
+  const writeScope = (raw.sync?.scope ?? '').trim()
+  if (!isValidScope(writeScope)) {
+    problems.push(`sync.scope 非法: ${JSON.stringify(raw.sync?.scope)}（应为 "" 或 proj:<name>[:mod:<name>]，name 仅小写字母/数字/-/_）`)
+  }
+  // '' 是合法项（全局层）：保留，用户可显式写 readScopes: [''] 收窄到仅全局
+  const readScopesRaw = (raw.sync?.readScopes ?? []).map((s) => String(s).trim())
+  const badRead = readScopesRaw.filter((s) => !isValidScope(s))
+  if (badRead.length) {
+    problems.push(`sync.readScopes 有非法项: ${badRead.map((s) => JSON.stringify(s)).join(', ')}`)
+  }
   if (problems.length) {
     throw new SyncError('invalid-config', `clh-knowledge-sync 配置有 ${problems.length} 处问题:\n  - ${problems.join('\n  - ')}`)
   }
+  // 未显式给 readScopes 时取写 scope 的继承闭包：mod 层节点可读 ""+proj+mod
+  const readScopes = [...new Set(readScopesRaw.length ? readScopesRaw : scopeAncestors(writeScope))]
 
   const profile: ResolvedProfile = {
     name: activeName,
@@ -160,6 +199,7 @@ export function resolveNodeConfig(raw: NodeSyncConfig, cwd = process.cwd()): Res
     basePath: (chosen!.basePath ?? '').replace(/\/+$/, ''),
     timeoutMs: chosen!.timeoutMs ?? 8000,
     token: chosen!.token ?? token,
+    adminToken: chosen!.adminToken || undefined,
     rejectUnauthorized: chosen!.tls?.rejectUnauthorized ?? true,
     caFile: chosen!.tls?.caFile || undefined,
   }
@@ -177,6 +217,8 @@ export function resolveNodeConfig(raw: NodeSyncConfig, cwd = process.cwd()): Res
     syncOnStart: raw.sync.syncOnStart ?? true,
     memoryDir,
     skillRoots,
+    writeScope,
+    readScopes,
     stateDir,
     logLevel: raw.log?.level ?? 'info',
     logDir: raw.log?.dir ? path.resolve(cwd, raw.log.dir) : path.join(stateDir, 'logs'),
@@ -197,9 +239,15 @@ export interface HubListenConfig {
   tls?: { certFile?: string; keyFile?: string }
 }
 
+/** 节点令牌 + 作用域授权；scopes 为 grant 列表（scope 精确值或 "*"/"proj:x:*" 通配）。 */
+export interface HubNodeCredential {
+  token: string
+  scopes: string[]
+}
+
 export interface HubConfig {
   listen: HubListenConfig
-  auth: { adminToken: string; nodeTokens: Record<string, string> }
+  auth: { adminToken: string; nodeTokens: Record<string, HubNodeCredential> }
   dataDir: string
   limits: { maxBodyBytes: number; maxFileBytes: number; maxItemsPerPush: number }
   log: { level: string; dir: string }
@@ -260,9 +308,39 @@ export function validateHubConfig(
   const authRaw = (raw.auth ?? {}) as Record<string, unknown>
   const adminToken = authRaw.adminToken
   if (typeof adminToken !== 'string' || !adminToken) problems.push('auth.adminToken 不能为空')
-  const nodeTokens = (authRaw.nodeTokens ?? {}) as Record<string, string>
-  const nodeEntries = Object.entries(nodeTokens).filter(([k, v]) => k && typeof v === 'string' && v)
-  if (nodeEntries.length === 0) problems.push('auth.nodeTokens 至少要配置一个节点 token')
+  // nodeTokens 两种形态："node": "<token>"（兼容旧配置=全 scope）或
+  // "node": {"token": "...", "scopes": ["", "proj:x", "proj:x:*"]}（scope 授权）
+  const nodeTokensRaw = (authRaw.nodeTokens ?? {}) as Record<string, unknown>
+  const nodeCredentials: Record<string, HubNodeCredential> = {}
+  for (const [node, v] of Object.entries(nodeTokensRaw)) {
+    if (!node) continue
+    if (typeof v === 'string' && v) {
+      nodeCredentials[node] = { token: v, scopes: ['*'] }
+      continue
+    }
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const rec = v as Record<string, unknown>
+      const t = rec.token
+      if (typeof t !== 'string' || !t) {
+        problems.push(`auth.nodeTokens.${node}.token 不能为空`)
+        continue
+      }
+      const scopes = Array.isArray(rec.scopes) ? rec.scopes.map((s) => String(s)) : null
+      if (!scopes || scopes.length === 0) {
+        problems.push(`auth.nodeTokens.${node}.scopes 必须是非空数组`)
+        continue
+      }
+      const bad = scopes.filter((s) => !isValidGrant(s))
+      if (bad.length) {
+        problems.push(`auth.nodeTokens.${node}.scopes 有非法授权项: ${bad.map((s) => JSON.stringify(s)).join(', ')}`)
+        continue
+      }
+      nodeCredentials[node] = { token: t, scopes }
+      continue
+    }
+    problems.push(`auth.nodeTokens.${node} 必须是 token 字符串或 {token, scopes} 对象`)
+  }
+  if (Object.keys(nodeCredentials).length === 0 && !problems.length) problems.push('auth.nodeTokens 至少要配置一个节点 token')
 
   const dataDir = typeof raw.dataDir === 'string' && raw.dataDir
     ? path.resolve(path.dirname(sourceFile), raw.dataDir)
@@ -281,7 +359,7 @@ export function validateHubConfig(
       port: port as number,
       tls: protocol === 'https' ? { certFile: tls.certFile, keyFile: tls.keyFile } : undefined,
     },
-    auth: { adminToken: adminToken as string, nodeTokens: Object.fromEntries(nodeEntries) },
+    auth: { adminToken: adminToken as string, nodeTokens: nodeCredentials },
     dataDir: dataDir!,
     limits: {
       maxBodyBytes: typeof limitsRaw.maxBodyBytes === 'number' ? limitsRaw.maxBodyBytes : 20 * 1024 * 1024,

@@ -8,6 +8,7 @@ import { createServer as createHttpsServer } from 'node:https';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import { canRead, canWrite, isValidScope, scopeAncestors } from '../scope.js';
 import { SyncError } from '../util.js';
 import { HubStore } from './store.js';
 const API = '/api/v1';
@@ -33,7 +34,7 @@ export async function startHubServer(cfg, logger) {
             stats: s,
         };
     });
-    // 节点：推送（一律进 pending）
+    // 节点：推送（一律进 pending；scope 不在该节点授权内 → 按条目标为 invalid，不静默改 scope）
     on('POST', `${API}/push`, async (ctx) => {
         const body = ctx.body;
         if (!body || !Array.isArray(body.items)) {
@@ -44,6 +45,17 @@ export async function startHubServer(cfg, logger) {
         }
         const results = [];
         for (const payload of body.items) {
+            const scope = payload?.scope ?? '';
+            if (!canWrite(ctx.scopes ?? [], scope)) {
+                results.push({
+                    kind: payload?.kind ?? 'memory',
+                    id: payload?.id ?? '?',
+                    scope,
+                    status: 'invalid',
+                    message: `scope ${JSON.stringify(scope)} 不在本节点授权内（授权: ${(ctx.scopes ?? []).join(', ') || '无'}）`,
+                });
+                continue;
+            }
             try {
                 results.push(await store.enqueuePush(ctx.node, payload));
             }
@@ -51,6 +63,7 @@ export async function startHubServer(cfg, logger) {
                 results.push({
                     kind: payload?.kind ?? 'memory',
                     id: payload?.id ?? '?',
+                    scope,
                     status: 'invalid',
                     message: err.message,
                 });
@@ -58,26 +71,65 @@ export async function startHubServer(cfg, logger) {
         }
         return { node: ctx.node, results };
     });
-    // 节点：拉取已发布条目 + tombstone
+    // 读授权求交：?scopes=（节点声明想读的 scope）→ 展开继承闭包 → ∩ 节点授权。
+    // 返回值是 grant-like 列表：未带参数时透传全部授权（可含通配），
+    // 带参数时收敛成被授权覆盖的精确 scope 集；store 用 canRead 统一判定。
+    const resolveReadSet = (ctx) => {
+        const grants = ctx.scopes ?? [];
+        const raw = ctx.url.searchParams.get('scopes');
+        // 未带 scopes 参数 = 用足全部授权；带了（含空串）= 按声明收敛——
+        // 空串即声明「仅全局 scope ""」（节点 writeScope="" 的 readScopes=[''] 就是这么发出来的）
+        if (raw === null)
+            return grants.concat();
+        const wanted = raw === '' ? [''] : raw.split(',').map((s) => s.trim());
+        for (const s of wanted) {
+            if (!isValidScope(s))
+                throw new SyncError('bad-request', `scopes 参数非法: ${JSON.stringify(s)}`);
+        }
+        const expanded = [...new Set(wanted.flatMap((s) => scopeAncestors(s)))];
+        return expanded.filter((s) => canRead(grants, s));
+    };
+    // 节点：拉取已发布条目 + tombstone（只回该节点可见 scope 内的）
     on('GET', `${API}/pull`, async (ctx) => {
         const sinceSeq = Number.parseInt(ctx.url.searchParams.get('sinceSeq') ?? '0', 10) || 0;
         const kinds = parseKinds(ctx.url.searchParams.get('kinds'));
-        const data = store.pullSince(sinceSeq, kinds);
+        const data = store.pullSince(sinceSeq, kinds, resolveReadSet(ctx));
         return { node: ctx.node, sinceSeq, ...data };
     });
-    // 节点：检索已发布条目
+    // 节点：检索已发布条目（同上按可见 scope 过滤）
+    // ?budget=N token 预算截断（命中附 content 供直接灌 context）；?since=/?before= ISO 时间过滤 updatedAt；?expiredOnly=true
     on('GET', `${API}/search`, async (ctx) => {
         const q = ctx.url.searchParams.get('q') ?? '';
         const kinds = parseKinds(ctx.url.searchParams.get('kinds'));
         const limit = Math.min(Number.parseInt(ctx.url.searchParams.get('limit') ?? '20', 10) || 20, 100);
-        const results = store.searchPublished(q, kinds, limit);
+        const budgetRaw = ctx.url.searchParams.get('budget');
+        const budget = budgetRaw === null ? undefined : Math.min(Number.parseInt(budgetRaw, 10) || 0, 200000);
+        if (budget !== undefined && budget <= 0)
+            throw new SyncError('bad-request', `budget 参数非法: ${JSON.stringify(budgetRaw)}`);
+        const dateParam = (name) => {
+            const raw = ctx.url.searchParams.get(name);
+            if (raw === null || raw === '')
+                return undefined;
+            const t = Date.parse(raw);
+            if (Number.isNaN(t))
+                throw new SyncError('bad-request', `${name} 参数不是合法时间: ${JSON.stringify(raw)}`);
+            return t;
+        };
+        const results = store.searchPublished(q, kinds, limit, resolveReadSet(ctx), {
+            budget,
+            since: dateParam('since'),
+            before: dateParam('before'),
+            expiredOnly: ctx.url.searchParams.get('expiredOnly') === 'true',
+        });
         return { query: q, total: results.length, results };
     });
-    // 节点：取单条已发布内容（skill 全量文件 / memory 全文）
+    // 节点：取单条已发布内容（skill 全量文件 / memory 全文）；scope 越权按 not-found 处理，不泄露存在性
     onParamRoute('GET', /^\/api\/v1\/entries\/(memory|skill)\/(.+)$/, async (ctx, m) => {
-        const entry = store.getEntry(m[1], decodeURIComponent(m[2]));
-        if (!entry)
+        const scope = ctx.url.searchParams.get('scope') ?? '';
+        const entry = isValidScope(scope) ? store.getEntry(m[1], decodeURIComponent(m[2]), scope) : undefined;
+        if (!entry || !canRead(ctx.scopes ?? [], entry.scope)) {
             throw new SyncError('not-found', `条目不存在或未过审批: ${m[2]}`);
+        }
         return entry;
     });
     // 节点：回读推送审批结果
@@ -97,6 +149,28 @@ export async function startHubServer(cfg, logger) {
             throw new SyncError('bad-request', 'body 必须是 {queueId, action: "approve"|"reject", reason?}');
         }
         return store.decide(body.queueId, body.action, 'admin', body.reason ?? '');
+    });
+    // 管理：总库浏览（轻量列表，不带正文）与单条详情；?scope= 精确过滤（缺省/空=全部 scope，admin 全见）
+    on('GET', `${API}/admin/entries`, async (ctx) => {
+        const kindsRaw = ctx.url.searchParams.get('kinds');
+        const kinds = kindsRaw
+            ? kindsRaw.split(',').map((k) => k.trim()).filter((k) => k === 'memory' || k === 'skill')
+            : undefined;
+        const scopeParam = ctx.url.searchParams.get('scope');
+        return {
+            entries: store.listEntries({
+                kinds,
+                q: ctx.url.searchParams.get('q') ?? undefined,
+                scope: scopeParam === null || scopeParam === '' ? undefined : scopeParam,
+            }),
+        };
+    });
+    onParamRoute('GET', /^\/api\/v1\/admin\/entries\/(memory|skill)\/(.+)$/, async (ctx, m) => {
+        const scope = ctx.url.searchParams.get('scope') ?? '';
+        const entry = store.getEntry(m[1], decodeURIComponent(m[2]), scope);
+        if (!entry)
+            throw new SyncError('not-found', `条目不存在: ${m[2]}`);
+        return entry;
     });
     // 管理：清理流程
     on('GET', `${API}/admin/cleanup-candidates`, async (ctx) => {
@@ -126,7 +200,7 @@ export async function startHubServer(cfg, logger) {
     on('GET', `${API}/admin/integrity`, async () => store.integrityCheck());
     // ---------- 认证 ----------
     const adminDigest = digest(cfg.auth.adminToken).toString('hex');
-    const nodeDigests = new Map(Object.entries(cfg.auth.nodeTokens).map(([node, token]) => [digest(token).toString('hex'), node]));
+    const nodeDigests = new Map(Object.entries(cfg.auth.nodeTokens).map(([node, cred]) => [digest(cred.token).toString('hex'), { node, scopes: cred.scopes }]));
     function authenticate(ctx, needAdmin) {
         const header = ctx.req.headers.authorization ?? '';
         const m = /^Bearer\s+(.+)$/i.exec(header);
@@ -137,9 +211,10 @@ export async function startHubServer(cfg, logger) {
         if (d === adminDigest) {
             return;
         }
-        const node = nodeDigests.get(d);
-        if (node && !needAdmin) {
-            ctx.node = node;
+        const cred = nodeDigests.get(d);
+        if (cred && !needAdmin) {
+            ctx.node = cred.node;
+            ctx.scopes = cred.scopes;
             return;
         }
         logger.warn('auth-denied', '认证失败', { remote: ctx.req.socket.remoteAddress, needAdmin });
