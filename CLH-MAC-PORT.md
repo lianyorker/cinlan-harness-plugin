@@ -58,3 +58,27 @@ export CLH_MAC_VENDOR=<提取的运行时包目录>
 cd clh-cli-agents && node demo/e2e-demo.mjs      # 31/31
 cd ../clh-knowledge-sync && node demo/e2e-demo.mjs  # 18/18
 ```
+
+## 增补：目录跟随 harness（双系统通用改造）
+
+### 需求
+默认同步目录不再写死 `~/.dsh/deepseek-sync`（Windows 为 `%USERPROFILE%\.dsh\...`），改为**跟随 harness 运行时注入的目录环境变量**派生——同一台电脑装多套 harness / 多 profile 时各实例本地记忆天然隔离，不怕用户篡改默认目录。
+
+### 环境变量注入规范审查（Windows / Mac 差异化确认）
+- 注入方：`@deepseek-ai/dsh-shell-env`（所有 dsh surface 共用，Windows/Mac **同一份代码**，无 win32 分支）：
+  - `DSH_HOME`：harness 根目录（Mac `/Users/x/.dsh`，Windows `C:\Users\x\.dsh`）
+  - `DSH_PROFILE`：当前 profile 名
+  - `DSH_PROFILE_DIR`：当前 profile 完整目录（`path.join` 处理分隔符，双端自动正确）
+- 注入链：`profile-boot` → `DSH_LAUNCH_ENVIRONMENT_KEY` 提供方 → 插件运行进程 env（已实证：macOS 插件进程 env 中三者齐备；Windows 由同一份 launcher 代码注入，仅值随平台不同）。
+
+### 实现（`clh-knowledge-sync` config）
+`resolveNodeConfig` 新增 `harnessDefaultSyncRoot()`：
+1. `DSH_PROFILE_DIR` 存在 → `<profile>/clh-knowledge-sync`
+2. 否则 `<DSH_HOME>/profiles/<DSH_PROFILE>` → `clh-knowledge-sync`
+3. 兜底 `~/.dsh/profiles/default`
+优先级：**用户显式配置（Settings UI / 补丁）> 环境派生默认**；`sync.memoryDir` 从 required 改为可选；`skillRoots` 未配置时默认 `<根>/skills`。Windows/Mac 同一份代码，无平台分支。
+
+### 回归
+- 派生默认：`DSH_PROFILE_DIR=/tmp/fake-profile-dir` → memoryDir/skillRoots 正确派生 ✅
+- 显式优先：显式路径不被覆盖 ✅
+- e2e：18/18 PASS（显式路径模式）✅
