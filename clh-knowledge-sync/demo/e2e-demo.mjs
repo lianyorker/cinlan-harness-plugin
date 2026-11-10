@@ -23,14 +23,26 @@
  *  15 admin CLI（clh-knowledge-sync admin stats）可用
  */
 import { spawn, spawnSync } from 'node:child_process'
-import { promises as fsp } from 'node:fs'
+import { existsSync, promises as fsp } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PKG_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DEMO_DIR = path.dirname(fileURLToPath(import.meta.url))
-const HARNESS_DIR = path.resolve(PKG_DIR, '..', '..', 'cinlan-harness')
-const CORDIS_BIN = path.join(HARNESS_DIR, 'vendor', 'cordis', 'bin.js')
+// mac 适配：优先 fork 源码树（Windows 开发机布局）；不存在时退回从官方安装版
+// app.asar 提取的运行时包目录（CLH_MAC_VENDOR 环境变量或默认 ../clh-mac-vendor）。
+let HARNESS_DIR = path.resolve(PKG_DIR, '..', '..', 'cinlan-harness')
+if (!existsSync(HARNESS_DIR)) {
+  HARNESS_DIR = process.env.CLH_MAC_VENDOR || path.resolve(PKG_DIR, '..', 'clh-mac-vendor')
+  console.log('[mac] fork 源码树不存在，改用提取的运行时包: ' + HARNESS_DIR)
+}
+const CORDIS_BIN = existsSync(path.join(HARNESS_DIR, 'vendor', 'cordis', 'bin.js'))
+  ? path.join(HARNESS_DIR, 'vendor', 'cordis', 'bin.js')
+  : path.join(HARNESS_DIR, 'cordis', 'bin.js')
+// mac 适配：loader 子包所在 node_modules 目录（fork 布局在 vendor/cordis 下，提取布局在 cordis 下）
+const CORDIS_NM = existsSync(path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules'))
+  ? path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules')
+  : path.join(HARNESS_DIR, 'cordis', 'node_modules')
 const HUB_PORT = 47610
 const BAD_PORT = 47611
 
@@ -79,7 +91,7 @@ async function ensureJunction(link, target) {
   // 总是重建：上一轮可能留下指向旧路径的坏 junction
   await fsp.rm(link, { recursive: true, force: true })
   await fsp.mkdir(path.dirname(link), { recursive: true })
-  await fsp.symlink(target, link, 'junction')
+  await fsp.symlink(target, link, process.platform === 'win32' ? 'junction' : 'dir')
 }
 
 async function write(file, content) {
@@ -202,9 +214,9 @@ async function main() {
 
   section('准备：junction、配置、种子内容、清理旧数据')
   const peerTargets = {
-    '@deepseek-ai/cordis': path.join(HARNESS_DIR, 'vendor', 'cordis'),
-    '@deepseek-ai/schemastery': path.join(HARNESS_DIR, 'vendor', 'schemastery'),
-    '@deepseek-ai/dsh-tools': path.join(HARNESS_DIR, 'packages', 'core', 'tools'),
+    '@deepseek-ai/cordis': (existsSync(path.join(HARNESS_DIR, 'vendor', 'cordis')) ? path.join(HARNESS_DIR, 'vendor', 'cordis') : path.join(HARNESS_DIR, 'cordis')),
+    '@deepseek-ai/schemastery': (existsSync(path.join(HARNESS_DIR, 'vendor', 'schemastery')) ? path.join(HARNESS_DIR, 'vendor', 'schemastery') : path.join(HARNESS_DIR, 'schemastery')),
+    '@deepseek-ai/dsh-tools': (existsSync(path.join(HARNESS_DIR, 'packages', 'core', 'tools')) ? path.join(HARNESS_DIR, 'packages', 'core', 'tools') : path.join(HARNESS_DIR, 'dsh-tools')),
   }
   for (const [pkg, target] of Object.entries(peerTargets)) {
     await ensureJunction(path.join(PKG_DIR, 'node_modules', pkg), target)
@@ -226,8 +238,8 @@ async function main() {
     // loader 的包名解析从 cordis.yml 目录向上找 package.json 建 scope；节点目录必须自带一个
     await write(path.join(DEMO_DIR, node, 'package.json'), JSON.stringify({ name: `@demo/${node}`, private: true, type: 'module' }, null, 2))
     // include/loader 自身也按 scope 解析，节点目录要能解析到它们
-    await ensureJunction(path.join(DEMO_DIR, node, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-include'))
-    await ensureJunction(path.join(DEMO_DIR, node, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'))
+    await ensureJunction(path.join(DEMO_DIR, node, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(CORDIS_NM, '@deepseek-ai', 'cordis-plugin-include'))
+    await ensureJunction(path.join(DEMO_DIR, node, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(CORDIS_NM, '@deepseek-ai', 'cordis-plugin-loader'))
   }
   await write(path.join(DEMO_DIR, 'node-a', 'node.config.json'), nodeConfig('node-a', 'token-a', HUB_PORT, { auto: true }))
   await write(path.join(DEMO_DIR, 'node-a', 'cordis.yml'), yamlNodeConfig('node-a', 'token-a', HUB_PORT, { auto: true, intervalSec: 3 }))

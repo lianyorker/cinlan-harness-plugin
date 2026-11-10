@@ -5,6 +5,7 @@
  * 全部连接参数（协议/地址/端口/TLS/超时/token）来自配置文件或环境变量，零硬编码地址。
  */
 import { promises as fsp } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { SyncError } from './util.js'
 import { isValidGrant, isValidScope, scopeAncestors } from './scope.js'
@@ -77,7 +78,7 @@ export function buildConfigSchema(Schema: AnySchema): AnySchema {
       auto: Schema.boolean().default(true),
       intervalSec: Schema.number().default(300),
       syncOnStart: Schema.boolean().default(true),
-      memoryDir: Schema.string().required(),
+      memoryDir: Schema.string(),
       skillRoots: Schema.array(Schema.string()).default([]),
       stateDirName: Schema.string().default('.clh-knowledge-sync'),
       scope: Schema.string().default(''),
@@ -146,6 +147,17 @@ function unwrapVolatile<T extends object>(input: T): T {
  * schema 已保证必填项存在；这里负责解析激活 profile、补默认端口、路径绝对化，
  * 并在引用不存在的 profile 或 token 为空时给出能直接定位问题的错误。
  */
+/** 跟随 harness 目录派生默认同步根目录：
+ *  优先 DSH_PROFILE_DIR（桌面端/CLI 注入的当前 profile 目录），其次 DSH_HOME/profiles/<DSH_PROFILE>，
+ *  兜底 <DSH_HOME 或 ~/.dsh>/profiles/default。同一台机器装多套 harness / 多 profile 时，
+ *  各实例的本地记忆天然隔离，不依赖写死的用户目录约定（Windows/Mac 双端一致）。 */
+function harnessDefaultSyncRoot(): string {
+    const { DSH_PROFILE_DIR, DSH_HOME, DSH_PROFILE } = process.env
+    if (DSH_PROFILE_DIR) return path.join(DSH_PROFILE_DIR, 'clh-knowledge-sync')
+    const home = DSH_HOME || path.join(os.homedir(), '.dsh')
+    return path.join(home, 'profiles', DSH_PROFILE || 'default', 'clh-knowledge-sync')
+}
+
 export function resolveNodeConfig(input: NodeSyncConfig, cwd = process.cwd()): ResolvedNodeConfig {
   const raw = unwrapVolatile(input)
   const problems: string[] = []
@@ -173,7 +185,9 @@ export function resolveNodeConfig(input: NodeSyncConfig, cwd = process.cwd()): R
     }
   }
 
-  if (!raw.sync?.memoryDir) problems.push('sync.memoryDir 不能为空')
+  const memoryDirRaw = raw.sync?.memoryDir || harnessDefaultSyncRoot()
+  if (!raw.sync?.memoryDir)
+    console.info('[clh-knowledge-sync] sync.memoryDir 未配置，跟随 harness 目录派生: ' + memoryDirRaw)
 
   const writeScope = (raw.sync?.scope ?? '').trim()
   if (!isValidScope(writeScope)) {
@@ -204,8 +218,8 @@ export function resolveNodeConfig(input: NodeSyncConfig, cwd = process.cwd()): R
     caFile: chosen!.tls?.caFile || undefined,
   }
 
-  const memoryDir = path.resolve(cwd, raw.sync.memoryDir)
-  const skillRoots = (raw.sync.skillRoots ?? []).map((r) => path.resolve(cwd, r))
+  const memoryDir = path.resolve(memoryDirRaw)
+  const skillRoots = (raw.sync.skillRoots ?? [path.join(harnessDefaultSyncRoot(), 'skills')]).map((r) => path.resolve(r))
   const stateDir = path.join(memoryDir, raw.sync.stateDirName || '.clh-knowledge-sync')
 
   return {

@@ -24,7 +24,9 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 
 本目录的插件必须同时兼容下面两套运行时，**不得偏向任何一边**：
 
-- **deepseek-harness（官方/安装版）**：本机为 Desktop 安装版 `D:\CodeTools\DeepSeek Harness`（运行时自报 `0.2.2-rc.1`，installer 元数据 `0.2.1-rc.5`）。CLI 是 `resources\runtime\cli\bin\dsh.cmd`——自带 Node + pnpm，是官方授予 reserved `desktop` profile 管理权的载体。
+- **deepseek-harness（官方/安装版，Desktop）**：运行时自报 `0.2.2-rc.1`（installer 元数据 `0.2.1-rc.5`）。CLI 自带 Node + pnpm，是官方授予 reserved `desktop` profile 管理权的载体。**双平台已实测**：
+  - Windows：安装于 `D:\CodeTools\DeepSeek Harness`，CLI 是 `resources\runtime\cli\bin\dsh.cmd`
+  - macOS（Apple Silicon）：安装于 `/Applications/DeepSeek Harness.app`，CLI 是 `/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`（无 .cmd 后缀）
 - **cinlan-harness（本仓库 fork 源码树）**：`apps/cinlan-harness`（根目录 `cinlan-harness` junction 同指）。CLI 是 `apps/cli` 构建产物 `clh`（`@cinlan/cli`，当前 `0.2.2-alpha.2`）；cordis / schemastery 由 `vendor/` link 覆盖为 fork 自带副本。
 
 两套 CLI 的 profile 目录默认共用 `$DSH_HOME/profiles/<name>`（默认 `~/.dsh`）——对同一 profile 的装/卸/开关，改动对两边同时生效；要隔离时用 `DSH_HOME` 环境变量分开。
@@ -63,11 +65,18 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 
 ## 安装
 
-**官方安装版（Desktop）**——用安装目录自带载体，自带 node/pnpm：
+**官方安装版（Desktop）**——用安装目录自带载体，自带 node/pnpm。Windows 与 macOS 命令分别如下：
 
 ```cmd
 "D:\CodeTools\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add "file:<本包绝对路径>"
 "D:\CodeTools\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop remove @cinlan/<plugin-name>
+```
+
+macOS：
+
+```bash
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add "file:<本包绝对路径>"
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop remove @cinlan/<plugin-name>
 ```
 
 **源码树（clh）**：
@@ -82,7 +91,7 @@ clh plugin --profile <name> add file:<本包路径>
 
 安装前 dsh/clh 会按 `engines.dsh`/`engines.clh` 与 `peerDependencies` 对**当前运行时自报版本**做检查（报错里引用的可能是 installer 元数据版本，以 `allow-version` 回显的版本为准）。被拒时按提示授精确版本豁免再重试：
 
-```cmd
+```bash
 dsh plugin --profile <profile> allow-version <包名>@<版本> --dsh-version <运行时版本> --accept-risk
 ```
 
@@ -92,6 +101,30 @@ dsh plugin --profile <profile> allow-version <包名>@<版本> --dsh-version <�
 
 - `file:` 装时拷贝——改插件源码后要 `npm run build` + `remove` + `add` 重装才生效。
 - `link:` 符号链接——源码即改即生效（重新构建后），profile 记录绝对路径；跨机器/换路径会断。
+
+## macOS 兼容说明（已实测：Apple Silicon，0.2.2-rc.1）
+
+插件本体双系统通用（同一份代码，无平台分支），已验证的差异与适配如下，详见 `CLH-MAC-PORT.md`：
+
+### 安装/验收差异
+- CLI 无 `.cmd` 后缀：`/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`；自带 node/pnpm 在 `Resources/runtime/primary-runtime/dependencies/`（node bin 在 `node/bin/node`，pnpm 入口 `pnpm/bin/pnpm.cjs`，不在 PATH 上，脚本里用绝对路径调）。
+- e2e demo（`demo/e2e-demo.mjs`）自动适配：优先找 fork 源码树 `vendor/`（Windows 开发机布局），不存在时回退 `CLH_MAC_VENDOR` 环境变量指定的提取目录（或默认 `../clh-mac-vendor`）；symlink 类型按平台取 `junction`（win32）/ `dir`（其余）。
+- Mac 上没有 fork 源码树时，运行时包可从官方安装版 `app.asar` 提取（cordis / schemastery / dsh-tools / loader / include / cosmokit 等），提取后需补齐 `cordis-plugin-include` 的 `js-yaml` 依赖。
+
+### 已修复的双端兼容 bug（合入后 Windows 同样受益）
+- **cordis 4.1 `volatile()` 配置分组**：schema 校验后返回 frozen 引用（`.get()` 才是值），旧版 cordis 返回普通对象。`clh-knowledge-sync` 的 `resolveNodeConfig` 已加 `unwrapConfig`（`@deepseek-ai/cosmokit` 的 `isVolatile` 递归解包），旧版下 no-op，双运行时兼容。
+
+### 默认目录跟随 harness（双系统通用）
+`clh-knowledge-sync` 的 `sync.memoryDir` / `skillRoots` **未显式配置时自动派生**（`harnessDefaultSyncRoot()`）：
+1. `DSH_PROFILE_DIR`（harness 运行时注入的当前 profile 目录）→ `<profile>/clh-knowledge-sync`
+2. 否则 `<DSH_HOME>/profiles/<DSH_PROFILE>/clh-knowledge-sync`
+3. 兜底 `~/.dsh/profiles/default/clh-knowledge-sync`
+
+注入方是 `@deepseek-ai/dsh-shell-env`（Windows/Mac 同一份代码，无平台分支；Mac 实证 `DSH_HOME`/`DSH_PROFILE`/`DSH_PROFILE_DIR` 三者在插件进程 env 齐备）。同一台电脑装多套 harness / 多 profile 时各实例本地记忆天然隔离；显式配置（Settings UI / 补丁）始终优先于派生默认。`sync.memoryDir` schema 已从 required 改为可选——零配置即可用。
+
+### macOS 实测记录
+- `clh-cli-agents` e2e 31/31 PASS；`clh-knowledge-sync` e2e 18/18 PASS。
+- CLI agent 配置里 Windows 需注意 `.cmd/.bat` 包装不可 spawn（`clh-cli-agents` 会显式拒绝并提示）；macOS 直接给可执行文件绝对路径即可。
 
 ## 装上 ≠ 可用
 
