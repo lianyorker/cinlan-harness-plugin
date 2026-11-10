@@ -24,7 +24,9 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 
 本目录的插件必须同时兼容下面两套运行时，**不得偏向任何一边**：
 
-- **deepseek-harness（官方/安装版）**：本机为 Desktop 安装版 `D:\CodeTools\DeepSeek Harness`（运行时自报 `0.2.2-rc.1`，installer 元数据 `0.2.1-rc.5`）。CLI 是 `resources\runtime\cli\bin\dsh.cmd`——自带 Node + pnpm，是官方授予 reserved `desktop` profile 管理权的载体。
+- **deepseek-harness（官方/安装版，Desktop）**：运行时自报 `0.2.2-rc.1`（installer 元数据 `0.2.1-rc.5`）。CLI 自带 Node + pnpm，是官方授予 reserved `desktop` profile 管理权的载体。**双平台已实测**：
+  - Windows：安装于 `D:\CodeTools\DeepSeek Harness`，CLI 是 `resources\runtime\cli\bin\dsh.cmd`
+  - macOS（Apple Silicon）：安装于 `/Applications/DeepSeek Harness.app`，CLI 是 `/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`（无 .cmd 后缀）
 - **cinlan-harness（本仓库 fork 源码树）**：`apps/cinlan-harness`（根目录 `cinlan-harness` junction 同指）。CLI 是 `apps/cli` 构建产物 `clh`（`@cinlan/cli`，当前 `0.2.2-alpha.2`）；cordis / schemastery 由 `vendor/` link 覆盖为 fork 自带副本。
 
 两套 CLI 的 profile 目录默认共用 `$DSH_HOME/profiles/<name>`（默认 `~/.dsh`）——对同一 profile 的装/卸/开关，改动对两边同时生效；要隔离时用 `DSH_HOME` 环境变量分开。
@@ -63,11 +65,18 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 
 ## 安装
 
-**官方安装版（Desktop）**——用安装目录自带载体，自带 node/pnpm：
+**官方安装版（Desktop）**——用安装目录自带载体，自带 node/pnpm。Windows 与 macOS 命令分别如下：
 
 ```cmd
 "D:\CodeTools\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add "file:<本包绝对路径>"
 "D:\CodeTools\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop remove @cinlan/<plugin-name>
+```
+
+macOS：
+
+```bash
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add "file:<本包绝对路径>"
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop remove @cinlan/<plugin-name>
 ```
 
 **源码树（clh）**：
@@ -82,7 +91,7 @@ clh plugin --profile <name> add file:<本包路径>
 
 安装前 dsh/clh 会按 `engines.dsh`/`engines.clh` 与 `peerDependencies` 对**当前运行时自报版本**做检查（报错里引用的可能是 installer 元数据版本，以 `allow-version` 回显的版本为准）。被拒时按提示授精确版本豁免再重试：
 
-```cmd
+```bash
 dsh plugin --profile <profile> allow-version <包名>@<版本> --dsh-version <运行时版本> --accept-risk
 ```
 
