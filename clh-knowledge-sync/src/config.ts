@@ -386,3 +386,27 @@ export function validateHubConfig(
     },
   }
 }
+
+/** 比较两份已解析配置，返回发生变化的域：client / local / timer / logger（空数组=无实质变化）。 */
+export function diffResolvedConfig(prev: any, next: any): string[] {
+  const domains = [];
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const hubChanged = !same(prev?.profile, next?.profile);
+  const nodeChanged = !same(prev?.nodeId, next?.nodeId) || !same(prev?.token, next?.token);
+  if (hubChanged || nodeChanged)
+    domains.push('client');
+  const localChanged = prev?.memoryDir !== next?.memoryDir
+    || !same(prev?.skillRoots, next?.skillRoots)
+    || prev?.stateDirName !== next?.stateDirName
+    || !same(prev?.scope, next?.scope)
+    || !same(prev?.readScopes, next?.readScopes);
+  if (localChanged)
+    domains.push('local');
+  const timerChanged = prev?.auto !== next?.auto || prev?.intervalSec !== next?.intervalSec;
+  if (timerChanged)
+    domains.push('timer');
+  const logChanged = prev?.logLevel !== next?.logLevel || prev?.logDir !== next?.logDir || prev?.nodeId !== next?.nodeId;
+  if (logChanged)
+    domains.push('logger');
+  return domains;
+}

@@ -82,3 +82,9 @@ cd ../clh-knowledge-sync && node demo/e2e-demo.mjs  # 18/18
 - 派生默认：`DSH_PROFILE_DIR=/tmp/fake-profile-dir` → memoryDir/skillRoots 正确派生 ✅
 - 显式优先：显式路径不被覆盖 ✅
 - e2e：18/18 PASS（显式路径模式）✅
+
+## 增补 2：热更新对齐（link: 安装 + 增量重建）
+
+- **link: 安装**：本地开发用 `plugin add "link:<路径>"`，profile 符号链接源码目录，改代码无需 remove+add（UI 改动经 HMR 热换入，服务改动重启加载即最新）。
+- **增量重建**：`resolveNodeConfig` 新增 `diffResolvedConfig(prev,next)`，`applyUpdate` 按 diff 分域——`client`(hub 连接/node) / `local`(目录/scope) / `timer`(auto/interval) / `logger`。仅换变化域，HTTP 连接与同步状态保留；无实质变化时零重建。
+- 回归：diff 四场景断言通过，e2e 18/18 PASS。
