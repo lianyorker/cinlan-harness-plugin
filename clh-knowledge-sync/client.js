@@ -195,7 +195,7 @@ window.__ModuleLoader__.load({
 .dss-btn{font:inherit;font-size:13px;line-height:1;border-radius:8px;border:1px solid var(--dsw-alias-border-l3);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);padding:0 14px;height:34px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:border-color .15s,background .15s}
 .dss-btn:hover{border-color:var(--dsw-alias-label-tertiary)}
 .dss-btn:disabled{opacity:.5;cursor:default}
-.dss-btn-primary{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary-invert)}
+.dss-btn-primary{background:var(--dsw-alias-button-primary-fill);border-color:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground)}
 .dss-btn-primary:hover{border-color:var(--dsw-alias-brand-primary);filter:brightness(1.06)}
 .dss-btn-ghost{background:transparent}
 .dss-iconbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--dsw-alias-border-l3);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary,var(--dsw-alias-label-primary));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;flex:none;transition:border-color .15s,color .15s}
