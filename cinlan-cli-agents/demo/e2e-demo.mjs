@@ -18,10 +18,10 @@ import { fileURLToPath } from 'node:url'
 const PKG_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DEMO_DIR = path.dirname(fileURLToPath(import.meta.url))
 // mac 适配：优先 fork 源码树（Windows 开发机布局）；不存在时退回从官方安装版
-// app.asar 提取的运行时包目录（CLH_MAC_VENDOR 环境变量或默认 ../clh-mac-vendor）。
+// app.asar 提取的运行时包目录（CINLAN_MAC_VENDOR 环境变量或默认 ../cinlan-mac-vendor）。
 let HARNESS_DIR = path.resolve(PKG_DIR, '..', '..', 'cinlan-harness')
 if (!existsSync(HARNESS_DIR)) {
-  HARNESS_DIR = process.env.CLH_MAC_VENDOR || path.resolve(PKG_DIR, '..', 'clh-mac-vendor')
+  HARNESS_DIR = process.env.CINLAN_MAC_VENDOR || path.resolve(PKG_DIR, '..', 'cinlan-mac-vendor')
   console.log('[mac] fork 源码树不存在，改用提取的运行时包: ' + HARNESS_DIR)
 }
 const CORDIS_BIN = existsSync(path.join(HARNESS_DIR, 'vendor', 'cordis', 'bin.js'))

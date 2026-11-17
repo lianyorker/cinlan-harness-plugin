@@ -175,7 +175,7 @@ npm run build && node demo/scope-smoke.mjs   # scope 隔离专项
 1. `git pull` 到最新；`cd cinlan-knowledge-sync && npm install && npm run build`。
 2. `"<安装目录>\resources\runtime\cli\bin\dsh.cmd" plugin --profile <name> add "file:<本包绝对路径>"`（`dsh.cmd` 不在 PATH，用全路径；`plugin` 必须是第一个子命令）。报 `incompatible-version` 时按提示 `allow-version` 授精确豁免后重跑。
 3. config override 写进**同一个 profile** 的 `cordis.patch.yml`（`- id: cinlan-knowledge-sync` 的 id-targeted 行即可，tools 行不用动）。**bundle 装进 A profile、override 写进 B profile，A 的主行会因缺 config 启动即 FAILED。**
-4. `memoryDir`/`skillRoots` 写绝对路径（会被 resolve 到 harness 进程 cwd，不是 profile 目录）；统一用 `~/.dsh/cinlan-knowledge-sync/{memory,skills}`——**自家插件数据目录一律 `clh-` 前缀**，别各机器各起各的目录名。
+4. `memoryDir`/`skillRoots` 不配则派生 `<profile>/cinlan-knowledge-sync`；要自定义就写绝对路径（会被 resolve 到 harness 进程 cwd，不是 profile 目录），统一 `cinlan-knowledge-sync` 目录名，别各机器各起各的。
 5. `node.token` 直接写字面值（推荐）。`!!js process.env.X` 取的是 app 启动时的进程 env——`setx` 对运行中进程无效、应用内重启/自启/远程会话继承旧 env，实测「有时挂上有时挂不上」；只 CLI 场景才考虑。
 6. 生效与验证：**运行中的会话不会换组合**——改完 patch/装完包要重启 app、开新会话；Settings → 插件页看行状态，或看 `<memoryDir>\.cinlan-knowledge-sync\logs\` 与 `sync-state.json` 有没有新写入。
 

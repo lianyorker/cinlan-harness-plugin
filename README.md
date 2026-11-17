@@ -105,27 +105,27 @@ dsh plugin --profile <profile> allow-version <包名>@<版本> --dsh-version <�
 
 ## macOS 兼容说明（已实测：Apple Silicon，0.2.2-rc.1）
 
-插件本体双系统通用（同一份代码，无平台分支），已验证的差异与适配如下，详见 `CLH-MAC-PORT.md`：
+插件本体双系统通用（同一份代码，无平台分支），已验证的差异与适配如下，详见 `MAC-PORT.md`：
 
 ### 安装/验收差异
 - CLI 无 `.cmd` 后缀：`/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`；自带 node/pnpm 在 `Resources/runtime/primary-runtime/dependencies/`（node bin 在 `node/bin/node`，pnpm 入口 `pnpm/bin/pnpm.cjs`，不在 PATH 上，脚本里用绝对路径调）。
-- e2e demo（`demo/e2e-demo.mjs`）自动适配：优先找 fork 源码树 `vendor/`（Windows 开发机布局），不存在时回退 `CLH_MAC_VENDOR` 环境变量指定的提取目录（或默认 `../clh-mac-vendor`）；symlink 类型按平台取 `junction`（win32）/ `dir`（其余）。
+- e2e demo（`demo/e2e-demo.mjs`）自动适配：优先找 fork 源码树 `vendor/`（Windows 开发机布局），不存在时回退 `CINLAN_MAC_VENDOR` 环境变量指定的提取目录（或默认 `../cinlan-mac-vendor`）；symlink 类型按平台取 `junction`（win32）/ `dir`（其余）。
 - Mac 上没有 fork 源码树时，运行时包可从官方安装版 `app.asar` 提取（cordis / schemastery / dsh-tools / loader / include / cosmokit 等），提取后需补齐 `cordis-plugin-include` 的 `js-yaml` 依赖。
 
 ### 已修复的双端兼容 bug（合入后 Windows 同样受益）
-- **cordis 4.1 `volatile()` 配置分组**：schema 校验后返回 frozen 引用（`.get()` 才是值），旧版 cordis 返回普通对象。`clh-knowledge-sync` 的 `resolveNodeConfig` 已加 `unwrapConfig`（`@deepseek-ai/cosmokit` 的 `isVolatile` 递归解包），旧版下 no-op，双运行时兼容。
+- **cordis 4.1 `volatile()` 配置分组**：schema 校验后返回 frozen 引用（`.get()` 才是值），旧版 cordis 返回普通对象。`cinlan-knowledge-sync` 的 `resolveNodeConfig` 已加 `unwrapConfig`（`@deepseek-ai/cosmokit` 的 `isVolatile` 递归解包），旧版下 no-op，双运行时兼容。
 
 ### 默认目录跟随 harness（双系统通用）
-`clh-knowledge-sync` 的 `sync.memoryDir` / `skillRoots` **未显式配置时自动派生**（`harnessDefaultSyncRoot()`）：
-1. `DSH_PROFILE_DIR`（harness 运行时注入的当前 profile 目录）→ `<profile>/clh-knowledge-sync`
-2. 否则 `<DSH_HOME>/profiles/<DSH_PROFILE>/clh-knowledge-sync`
-3. 兜底 `~/.dsh/profiles/default/clh-knowledge-sync`
+`cinlan-knowledge-sync` 的 `sync.memoryDir` / `skillRoots` **未显式配置时自动派生**（`harnessDefaultSyncRoot()`）：
+1. `DSH_PROFILE_DIR`（harness 运行时注入的当前 profile 目录）→ `<profile>/cinlan-knowledge-sync`
+2. 否则 `<DSH_HOME>/profiles/<DSH_PROFILE>/cinlan-knowledge-sync`
+3. 兜底 `~/.dsh/profiles/default/cinlan-knowledge-sync`
 
 注入方是 `@deepseek-ai/dsh-shell-env`（Windows/Mac 同一份代码，无平台分支；Mac 实证 `DSH_HOME`/`DSH_PROFILE`/`DSH_PROFILE_DIR` 三者在插件进程 env 齐备）。同一台电脑装多套 harness / 多 profile 时各实例本地记忆天然隔离；显式配置（Settings UI / 补丁）始终优先于派生默认。`sync.memoryDir` schema 已从 required 改为可选——零配置即可用。
 
 ### macOS 实测记录
-- `clh-cli-agents` e2e 31/31 PASS；`clh-knowledge-sync` e2e 18/18 PASS。
-- CLI agent 配置里 Windows 需注意 `.cmd/.bat` 包装不可 spawn（`clh-cli-agents` 会显式拒绝并提示）；macOS 直接给可执行文件绝对路径即可。
+- `cinlan-cli-agents` e2e 31/31 PASS；`cinlan-knowledge-sync` e2e 18/18 PASS。
+- CLI agent 配置里 Windows 需注意 `.cmd/.bat` 包装不可 spawn（`cinlan-cli-agents` 会显式拒绝并提示）；macOS 直接给可执行文件绝对路径即可。
 
 ## 装上 ≠ 可用
 

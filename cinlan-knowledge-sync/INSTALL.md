@@ -11,7 +11,7 @@
 
 - **节点 token**：hub `auth.nodeTokens` 里给本节点登记的值。
 - **管理员令牌（面板用，可选）**：hub 配置里的 `auth.adminToken`（本项目 hub 位于服务器 `/opt/cinlan-knowledge-sync/hub.config.json`，字面值或其引用的环境变量）。不配则「记忆库管理」面板提示『未配置管理员令牌』，同步与工具不受影响。**只写进本机 profile，勿提交进仓库。**
-- **数据目录（统一约定）**：`memoryDir`/`skillRoots` 用 `%USERPROFILE%\.dsh\cinlan-knowledge-sync\memory` 和 `%USERPROFILE%\.dsh\cinlan-knowledge-sync\skills`——**规范：自家插件数据目录一律 `clh-` 前缀**，所有机器同一约定，目录名不要自由发挥（实测出现过 `knowledge-sync`、`deepseek-sync` 各起各的，跨机排障时对不上号）。必须绝对路径。
+- **数据目录（统一约定）**：`memoryDir`/`skillRoots` 用 `%USERPROFILE%\.dsh\cinlan-knowledge-sync\memory` 和 `%USERPROFILE%\.dsh\cinlan-knowledge-sync\skills`——**规范：CLI 节点数据目录一律 `cinlan-knowledge-sync`**，所有机器同一约定，目录名不要自由发挥（实测出现过 `knowledge-sync`、`deepseek-sync`、`clh-knowledge-sync` 各起各的，跨机排障时对不上号）。必须绝对路径。Desktop 插件内不配则由 harness 派生 `<profile>/cinlan-knowledge-sync`。
 - **dsh.cmd 路径**：`<安装目录>\resources\runtime\cli\bin\dsh.cmd`——不在 PATH，必须全路径调用；`plugin` 必须是第一个子命令。
 
 ## 1. 拿源码：整仓 clone 是正常的
@@ -101,9 +101,9 @@ del "C:\Users\<user>\.dsh\profiles\desktop\pnpm-lock.yaml"
       auto: true
       intervalSec: 300
       syncOnStart: true
-      memoryDir: 'C:\Users\<user>\.dsh\cinlan-knowledge-sync\memory'      # ← 统一约定 clh- 前缀，勿改
+      memoryDir: 'C:\Users\<user>\.dsh\cinlan-knowledge-sync\memory'      # ← 统一约定 cinlan-knowledge-sync，勿改
       skillRoots:
-        - 'C:\Users\<user>\.dsh\cinlan-knowledge-sync\skills'             # ← 统一约定 clh- 前缀，勿改
+        - 'C:\Users\<user>\.dsh\cinlan-knowledge-sync\skills'             # ← 统一约定 cinlan-knowledge-sync，勿改
       # scope: 'proj:<项目>'            # 多项目共用 hub 时给本机定写入命名空间；不配=全局
       # readScopes: []                  # 可读范围；缺省自动取 scope 的祖先闭包
     oneshot:
