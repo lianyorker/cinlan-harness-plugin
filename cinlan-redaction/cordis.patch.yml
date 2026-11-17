@@ -1,0 +1,5 @@
+# @cinlan/redaction 组合包：树外安装（clh/dsh plugin add <本包>）后叠到 profile。
+# 单行：llm/stream waterfall 出站脱敏 + Remote 记录端点，无宿主行依赖。
+- insert:
+    - id: cinlan-redaction
+      name: '@cinlan/redaction'
