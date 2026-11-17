@@ -496,6 +496,7 @@ window.__ModuleLoader__.load({
         if (scrollRefs.current.side) scrollRefs.current.side.scrollTop = 0
         setSelVal(null)
         setExpanded(false)
+        setPop(null)
       }, [rec.id])
 
       // inline-highlight every stored placeholder inside masked text; hovering a
@@ -519,6 +520,20 @@ window.__ModuleLoader__.load({
         const r = el.getBoundingClientRect()
         setPop({ x: Math.max(8, Math.min(r.left, window.innerWidth - 300)), y: r.bottom + 6, v })
       }
+
+      // mark 被卸载（切记录/tab/滚动走开）时 mouseleave 不会触发——
+      // 全局点击/滚动/失焦都关掉，不然卡片会成尸体悬在屏上。
+      useEffect(() => {
+        const off = () => setPop(null)
+        window.addEventListener('pointerdown', off, true)
+        window.addEventListener('wheel', off, true)
+        window.addEventListener('blur', off)
+        return () => {
+          window.removeEventListener('pointerdown', off, true)
+          window.removeEventListener('wheel', off, true)
+          window.removeEventListener('blur', off)
+        }
+      }, [])
 
       const KIND_COLOR = (k) => {
         const map = {
