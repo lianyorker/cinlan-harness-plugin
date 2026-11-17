@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * clh-cli-agents 端到端验收。
+ * cinlan-cli-agents 端到端验收。
  *
  * A 部分（同进程）：真实 cordis 挂载插件 + AgentRuntime 驱动 demo/fake-agents 的 stub
  * （不依赖真 claude/codex），覆盖配置校验、三种 prompt 注入、JSON 解析、超时、失败、
@@ -61,7 +61,7 @@ const ECHO_STUB = path.join(DEMO_DIR, 'fake-agents', 'echo-agent.mjs')
 const FAIL_STUB = path.join(DEMO_DIR, 'fake-agents', 'fail-agent.mjs')
 
 async function main() {
-  console.log('clh-cli-agents e2e demo')
+  console.log('cinlan-cli-agents e2e demo')
   console.log(`包目录: ${PKG_DIR}`)
 
   // ---------- 准备：peer junction + demo 配置 ----------
@@ -90,7 +90,7 @@ async function main() {
       typo: { command: 'node', notAField: 1 },
       fp: { command: 'node', promptInjectionMode: 'flag-prompt' },
       acp: { command: 'node', protocol: 'acp' },
-      missenv: { command: 'node', env: { X: '${CLH_E2E_MISSING_ENV_XYZ}' } },
+      missenv: { command: 'node', env: { X: '${CINLAN_E2E_MISSING_ENV_XYZ}' } },
     },
   }
   try {
@@ -100,7 +100,7 @@ async function main() {
     const msg = err instanceof ConfigError ? err.message : ''
     const has = (s) => msg.includes(s)
     assert('01 坏配置聚合报错（未知字段/坏 id/缺 promptFlag/acp 未实现/缺 env）',
-      err instanceof ConfigError && has('notAField') && has('bad id!') && has('promptFlag') && has('acp') && has('CLH_E2E_MISSING_ENV_XYZ'),
+      err instanceof ConfigError && has('notAField') && has('bad id!') && has('promptFlag') && has('acp') && has('CINLAN_E2E_MISSING_ENV_XYZ'),
       { message: msg })
   }
 
@@ -120,8 +120,8 @@ async function main() {
   // 与真实 loader 一致：传原始配置对象（apply → resolveConfig），不是已解析结果
   ctx.plugin(pluginIndex, absRaw)
   await sleep(300) // 等 Service.init（detectOnStart 探测全部 stub）落定
-  const service = ctx.clhCliAgents
-  assert('02b ctx.clhCliAgents 挂载且 agentIds 齐全',
+  const service = ctx.cliAgents
+  assert('02b ctx.cliAgents 挂载且 agentIds 齐全',
     Boolean(service) && JSON.stringify(service.agentIds.slice().sort()) === JSON.stringify(['badjson', 'echo', 'echo-text', 'fail', 'ghost', 'promptflag', 'queue', 'slow', 'stdin', 'withenv']),
     { agentIds: service?.agentIds })
   assert('02c state() 汇总', service.state().agents.length === 10 && service.state().running === 0, { state: service.state() })
@@ -182,24 +182,24 @@ async function main() {
 
   // ---------- 05 独立 CLI ----------
   section('A5 CLI')
-  const cliRun = spawnSync(process.execPath, ['bin/clh-cli-agents.js', '--config', 'demo/config.json', 'run', 'echo', 'cli hello'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
+  const cliRun = spawnSync(process.execPath, ['bin/cinlan-cli-agents.js', '--config', 'demo/config.json', 'run', 'echo', 'cli hello'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
   let cliParsed = null
   try { cliParsed = JSON.parse(cliRun.stdout) } catch { /* 解析失败在断言里报 */ }
   // CLI 输出的是 RunResult；stub 的回显在 RunResult.stdout（JSON 字符串）里
   let cliEcho = null
   try { cliEcho = JSON.parse(cliParsed?.stdout ?? '') } catch { /* 同上 */ }
   assert('05a CLI run：退出码 0 + JSON 结果', cliRun.status === 0 && cliEcho?.result === 'cli hello', { status: cliRun.status, echo: cliEcho, stderr: cliRun.stderr.slice(0, 120) })
-  const cliDetect = spawnSync(process.execPath, ['bin/clh-cli-agents.js', '--config', 'demo/config.json', 'detect', 'echo'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
+  const cliDetect = spawnSync(process.execPath, ['bin/cinlan-cli-agents.js', '--config', 'demo/config.json', 'detect', 'echo'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
   assert('05b CLI detect：exit 0 且 installed=true', cliDetect.status === 0 && JSON.parse(cliDetect.stdout)[0]?.installed === true, { status: cliDetect.status, stdout: cliDetect.stdout.slice(0, 120) })
-  const cliFail = spawnSync(process.execPath, ['bin/clh-cli-agents.js', '--config', 'demo/config.json', 'run', 'fail', 'x'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
+  const cliFail = spawnSync(process.execPath, ['bin/cinlan-cli-agents.js', '--config', 'demo/config.json', 'run', 'fail', 'x'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
   assert('05c CLI run 失败透传退出码 3', cliFail.status === 3, { status: cliFail.status })
-  const cliBad = spawnSync(process.execPath, ['bin/clh-cli-agents.js', '--config', 'demo/config.json', 'run', 'nope', 'x'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
+  const cliBad = spawnSync(process.execPath, ['bin/cinlan-cli-agents.js', '--config', 'demo/config.json', 'run', 'nope', 'x'], { cwd: PKG_DIR, encoding: 'utf8', timeout: 30000 })
   assert('05d CLI 未知 agent → 退出码 2 + 错误文本', cliBad.status === 2 && cliBad.stderr.includes('unknown-agent'), { status: cliBad.status, stderr: cliBad.stderr.slice(0, 160) })
 
   // ---------- 06 工具行 ----------
   section('A6 模型工具行')
   const registered = []
-  const stubToolsCtx = { tools: { register: (t) => registered.push(t) }, get: (name) => (name === 'clhCliAgents' ? service : undefined) }
+  const stubToolsCtx = { tools: { register: (t) => registered.push(t) }, get: (name) => (name === 'cliAgents' ? service : undefined) }
   pluginTools.apply(stubToolsCtx)
   assert('06a 注册两个工具', registered.length === 2 && registered.map((t) => t.name).sort().join(',') === 'cli_agent_run,cli_agents_list', { names: registered.map((t) => t.name) })
   const listTool = registered.find((t) => t.name === 'cli_agents_list')
@@ -224,11 +224,11 @@ async function main() {
   section('B 真实 cordis loader 挂载')
   const nodeReal = path.join(DEMO_DIR, 'node-real')
   await write(path.join(nodeReal, 'package.json'), JSON.stringify({ name: '@demo/node-real', private: true, type: 'module' }, null, 2))
-  await ensureJunction(path.join(nodeReal, 'node_modules', '@cinlan', 'clh-cli-agents'), PKG_DIR)
+  await ensureJunction(path.join(nodeReal, 'node_modules', '@cinlan', 'cli-agents'), PKG_DIR)
   await ensureJunction(path.join(nodeReal, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-include'))
   await ensureJunction(path.join(nodeReal, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'))
   await write(path.join(nodeReal, 'cordis.yml'), [
-    `- name: '@cinlan/clh-cli-agents'`,
+    `- name: '@cinlan/cli-agents'`,
     `  config:`,
     `    agents:`,
     `      echo:`,
@@ -260,11 +260,11 @@ async function main() {
 
   const nodeBad = path.join(DEMO_DIR, 'node-bad')
   await write(path.join(nodeBad, 'package.json'), JSON.stringify({ name: '@demo/node-bad', private: true, type: 'module' }, null, 2))
-  await ensureJunction(path.join(nodeBad, 'node_modules', '@cinlan', 'clh-cli-agents'), PKG_DIR)
+  await ensureJunction(path.join(nodeBad, 'node_modules', '@cinlan', 'cli-agents'), PKG_DIR)
   await ensureJunction(path.join(nodeBad, 'node_modules', '@deepseek-ai', 'cordis-plugin-include'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-include'))
   await ensureJunction(path.join(nodeBad, 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'), path.join(HARNESS_DIR, 'vendor', 'cordis', 'node_modules', '@deepseek-ai', 'cordis-plugin-loader'))
   await write(path.join(nodeBad, 'cordis.yml'), [
-    `- name: '@cinlan/clh-cli-agents'`,
+    `- name: '@cinlan/cli-agents'`,
     `  config:`,
     `    agents:`,
     `      fp:`,

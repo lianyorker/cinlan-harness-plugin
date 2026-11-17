@@ -107,7 +107,7 @@
       "outputFormat": "json"
     },
     "ghost": {
-      "command": "clh-e2e-ghost-cmd",
+      "command": "cinlan-e2e-ghost-cmd",
       "promptInjectionMode": "argv",
       "outputFormat": "text",
       "description": "不在 PATH 的命令：探测应报不在位"

@@ -1,5 +1,5 @@
 /**
- * @cinlan/clh-cli-agents 配置层。
+ * @cinlan/cli-agents 配置层。
  *
  * 参照 stablyai/orca 的 TUI_AGENT_CONFIG：每个外部 CLI agent 用一条声明式条目描述
  * （探测命令、启动命令、prompt 注入方式、并发上限），插件本体不写死任何 agent——
@@ -77,7 +77,7 @@ export interface ResolvedConfig {
 
 export class ConfigError extends Error {
   constructor(readonly problems: string[]) {
-    super(`clh-cli-agents 配置有 ${problems.length} 个问题:\n- ${problems.join('\n- ')}`)
+    super(`cinlan-cli-agents 配置有 ${problems.length} 个问题:\n- ${problems.join('\n- ')}`)
   }
 }
 

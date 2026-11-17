@@ -10,7 +10,7 @@ export const RESERVED_PROTOCOLS = ['acp'];
 export class ConfigError extends Error {
     problems;
     constructor(problems) {
-        super(`clh-cli-agents 配置有 ${problems.length} 个问题:\n- ${problems.join('\n- ')}`);
+        super(`cinlan-cli-agents 配置有 ${problems.length} 个问题:\n- ${problems.join('\n- ')}`);
         this.problems = problems;
     }
 }

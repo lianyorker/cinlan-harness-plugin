@@ -1,5 +1,5 @@
 {
-  "name": "@cinlan/clh-cli-agents",
+  "name": "@cinlan/cli-agents",
   "version": "0.1.0",
   "type": "module",
   "description": "Generic external CLI agent integration for Cinlan/DeepSeek Harness: orca-style declarative agent catalog (detect / prompt injection / headless exec), model tools + standalone CLI",
@@ -18,7 +18,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "bin": {
-    "clh-cli-agents": "./bin/clh-cli-agents.js"
+    "cinlan-cli-agents": "./bin/cinlan-cli-agents.js"
   },
   "files": [
     "lib/**/*.js",

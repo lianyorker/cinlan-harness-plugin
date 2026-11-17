@@ -1,6 +1,6 @@
-# @cinlan/clh-cli-agents
+# @cinlan/cli-agents
 
-deepseek-harness / cinlan-harness 的**外部 CLI agent 通用集成**插件：把 claude / codex / orca 这类外部 CLI agent 用一份声明式配置接入 harness——服务行提供 `ctx.clhCliAgents`（list / detect / run / state），工具行注册两个模型工具（`cli_agents_list` / `cli_agent_run`），另带一个脱离 harness 的独立 CLI（`bin/clh-cli-agents.js`）。
+deepseek-harness / cinlan-harness 的**外部 CLI agent 通用集成**插件：把 claude / codex / orca 这类外部 CLI agent 用一份声明式配置接入 harness——服务行提供 `ctx.cliAgents`（list / detect / run / state），工具行注册两个模型工具（`cli_agents_list` / `cli_agent_run`），另带一个脱离 harness 的独立 CLI（`bin/cinlan-cli-agents.js`）。
 
 设计参考 [stablyai/orca](https://github.com/stablyai/orca) 的 `TUI_AGENT_CONFIG`（声明式 agent 目录 + prompt 注入语义），并结合了 harness 侧实验包（`packages/experimental/claude-code-mods`、`hooks-claude-code` + `hook-protocol`、`packages/acp`）的分析结论：harness 对外部 agent 生态已有三条接入面——进程内钩子映射、子进程 hooks 协议、JSON-RPC stdio（ACP）。本插件取第三条的**客户端方向**：不是把 harness 暴露给外部 agent（ACP server），而是把外部 agent 变成 harness 可派发的执行资源（agent 目录 + headless 运行）。`protocol: acp` 已在 schema 预留（resolveConfig 明确报未实现），后续接 orca / claude-code-acp 的 JSON-RPC stdio 协议时不用改配置结构。
 
@@ -60,7 +60,7 @@ Node 在 Windows 上无法用无 shell 的 spawn 直接执行 .cmd/.bat（EINVAL
 - Claude Code：`node_modules/@anthropic-ai/claude-code/bin/claude.exe`（本机验证过的写法，见下）
 - codex：`node_modules/@openai/codex/bin/codex.js` 之类 js 入口 → `command: "node"` + args 首项
 
-## 服务 API（ctx.clhCliAgents）
+## 服务 API（ctx.cliAgents）
 
 - `agentIds: string[]`
 - `list(): ResolvedAgent[]`
@@ -78,9 +78,9 @@ RunResult：`ok / exitCode / signal / timedOut / durationMs / stdout / stderr / 
 ## 独立 CLI
 
 ```bash
-node bin/clh-cli-agents.js --config <file> list
-node bin/clh-cli-agents.js --config <file> detect [id...]
-node bin/clh-cli-agents.js --config <file> run <id> <prompt...>
+node bin/cinlan-cli-agents.js --config <file> list
+node bin/cinlan-cli-agents.js --config <file> detect [id...]
+node bin/cinlan-cli-agents.js --config <file> run <id> <prompt...>
 ```
 
 退出码：run 透传 agent 退出码（超时 124）；配置/用法错误 2。日志走 stderr，结果 JSON 走 stdout。
@@ -93,15 +93,18 @@ npm run e2e
 
 31 项断言：配置校验聚合、服务挂载与探测、三种注入、JSON 解析/parseFailed、超时、失败传播、并发排队、cwd/env、未知 agent/空 prompt、CLI 四态、工具行、dispose、真实 cordis loader 挂载（node-real）与坏配置报错（node-bad，经 demo/boot-check.mjs 挂 console exporter——cordis 默认 logger 只写内存 buffer，真实 bin.js 下坏配置对终端静默，这是运行时行为不是插件缺陷）。
 
-## 已验证（本机实跑，2026-11-09）
+## 已验证（本机实跑，2026-11-17 改名后全量复验；首次验证 2026-11-09）
 
 - `npm run typecheck` / `npm run build`：0 错误。
-- `npm run e2e`：**31/31 PASS**（真实 cordis `new Context().plugin()` 同进程 + vendor/cordis 真实 loader 跨进程）。
-- **真实 agent**：本机 Claude Code `2.1.310`，经 `bin/clh-cli-agents.js` detect → `installed: true, version: "2.1.310 (Claude Code)"`；`run` 派发中文 prompt → exit 0，`parsed.result === '{"ok":true,"echo":"插件链路通"}'`（10.2s，JSON 模式）。claude 的 nvm `.cmd` shim 按 Windows 规则被拒，改用 `claude.exe` 原生入口（上面 config 写法）。
+- `npm run e2e`：**31/31 PASS**（真实 cordis `new Context().plugin()` 同进程 + vendor/cordis 真实 loader 跨进程）。改名（clh→cinlan）后重构建、复跑通过。
+- **改名后修复的两个坑（后续改名/新增插件时适用）**：
+  1. `lib/` 不会随目录改名自动重建——改名后必须 `npm run build`，否则 e2e 按新服务名（`ctx.cliAgents`）断言而旧产物仍注册 `ctx.clhCliAgents`，02b 直接崩。
+  2. demo 的 scoped junction 目录名必须等于**包名尾段**（`@cinlan/cli-agents` → `node_modules/@cinlan/cli-agents`），不是包 basename（旧名时代两者恰好相同所以没暴露；写成 `@cinlan/cinlan-cli-agents` 会在真实 loader 跨进程断言报 `ERR_MODULE_NOT_FOUND`）。e2e 脚本已按此修正。
+- **真实 agent**：本机 Claude Code `2.1.310`，经 `bin/cinlan-cli-agents.js` detect → `installed: true, version: "2.1.310 (Claude Code)"`；`run` 派发中文 prompt → exit 0，`parsed.result === '{"ok":true,"echo":"插件链路通"}'`（10.2s，JSON 模式）。claude 的 nvm `.cmd` shim 按 Windows 规则被拒，改用 `claude.exe` 原生入口（上面 config 写法）。
 - codex：本机在位（`codex-cli 0.166.0`），但未做真实 run（同 .cmd shim 问题，需指到 js 入口，未配置验证）。
-- **双运行时试装全链路**（隔离测试 profile `e2e-agents`，未碰真实 profile）：
-  - dsh（官方 CLI，Desktop 0.2.2-rc.1 自带）：`plugin --profile e2e-agents allow-version @cinlan/clh-cli-agents@0.1.0 --dsh-version 0.2.2-rc.1 --accept-risk` → `add file:<包路径>` → `--dump-config` 出现 `clh-cli-agents` + `clh-cli-agents-tools` 两行 → `remove` → dump 归零。
-  - clh（fork `@cinlan/cli 0.2.2-alpha.2`，注意其默认 home 是 `~/.clh`，不读 `DSH_HOME`）：`add` → dump 两行 → `remove` → dump 归零。测试 profile `C:\Users\ASUS\.clh\profiles\e2e-agents` 已重装好插件，可直接查看。
+- **双运行时试装全链路**（隔离测试 profile `e2e-agents`，未碰真实 profile；2026-11-17 新名包复验）：
+  - dsh（官方 CLI，**Desktop 已升级 0.2.2-rc.3**，rc.1 的豁免已失效需按新版本重新 allow）：`plugin --profile e2e-agents allow-version @cinlan/cli-agents@0.1.0 --dsh-version 0.2.2-rc.3 --accept-risk` → `add file:<包路径>` → `--dump-config` 出现 `cinlan-cli-agents` + `cinlan-cli-agents-tools` 两行 → `remove` → dump 归零。
+  - clh（fork `@cinlan/cli 0.2.2-alpha.2`，注意其默认 home 是 `~/.clh`，不读 `DSH_HOME`）：`add` → dump 两行 → `remove` → dump 归零。测试 profile `C:\Users\ASUS\.clh\profiles\e2e-agents` 已重装新名包 `@cinlan/cli-agents`（link 指向本目录），可直接查看（改名初装时的旧名断链残留已清）。
   - **发现 fork bug**：clh 的 plugin-manager 对 `file:D:/...` 形式的 spec 会原样传给 pnpm，pnpm 不认盘符开头的 file: 路径（scandir 拼成 `profile\D:\...`）报 ENOENT——改传**不带 `file:` 前缀的盘符绝对路径**（`clh plugin --profile <name> add D:/path/to/pkg`）可正常安装。官方 dsh 的 `file:D:/...` 正常。此问题已如实记录，待上游修。
 
 ## 未验证 / 已知边界
@@ -111,15 +114,15 @@ npm run e2e
 - `protocol: "acp"` 仅预留（schema 放行、resolveConfig 明确报未实现）；orca / claude-code-acp 的 JSON-RPC stdio 客户端是后续工作。
 - `flag-prompt` 模式只对支持 prefill 的 agent 有意义（如 orca TUI），纯 headless CLI 用 `argv` 即可。
 - detect 命令走 shell（配置受信；prompt 永远不走 shell）；detect 是整条命令行字符串，路径含空格时自行加引号。
-- harness 运行时版本：fork `0.2.2-alpha.2`（e2e 用的 vendor/cordis 同源）；官方 Desktop `0.2.2-rc.1` 未实测本插件（无 UI 面，风险点仅 loader 兼容，两侧行为应一致）。
+- harness 运行时版本：fork `0.2.2-alpha.2`（e2e 用的 vendor/cordis 同源）；官方 Desktop `0.2.2-rc.3` 已双侧试装验证（2026-11-17）。
 
 ## 安装
 
 ```bash
-clh plugin --profile <name> add D:/path/to/clh-cli-agents   # 注意：fork 不认 file:D:/ 形式，直接传盘符绝对路径
+clh plugin --profile <name> add D:/path/to/cinlan-cli-agents   # 注意：fork 不认 file:D:/ 形式，直接传盘符绝对路径
 # dsh 侧：
-dsh plugin --profile <name> allow-version @cinlan/clh-cli-agents@0.1.0 --dsh-version <运行时版本> --accept-risk
-dsh plugin --profile <name> add file:D:/path/to/clh-cli-agents
+dsh plugin --profile <name> allow-version @cinlan/cli-agents@0.1.0 --dsh-version <运行时版本> --accept-risk
+dsh plugin --profile <name> add file:D:/path/to/cinlan-cli-agents
 ```
 
-cordis.patch.yml 会向组合插入两行：`clh-cli-agents`（服务）与 `clh-cli-agents-tools`（工具，依赖 base profile 的 `tools` 服务）。
+cordis.patch.yml 会向组合插入两行：`cinlan-cli-agents`（服务）与 `cinlan-cli-agents-tools`（工具，依赖 base profile 的 `tools` 服务）。

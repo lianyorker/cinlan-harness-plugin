@@ -1,7 +1,7 @@
 /**
- * @cinlan/clh-cli-agents 主插件行。
+ * @cinlan/cli-agents 主插件行。
  *
- * 提供 ctx.clhCliAgents 服务（list/detect/run/state）并在启动时可选探测全部 agent。
+ * 提供 ctx.cliAgents 服务（list/detect/run/state）并在启动时可选探测全部 agent。
  * 运行时（子进程、并发信号量）随插件 fiber 卸载一并清理（ctx.effect → runtime.dispose）。
  * 参考：stablyai/orca 的声明式 agent 目录 + deepseek-harness 实验包的钩子桥思路
  * （外部工具生态接入 harness 扩展点），本插件把「外部 CLI agent」变成 harness 可派发的执行资源。
@@ -21,11 +21,11 @@ import { AgentRuntime, type DetectResult, type RunOptions, type RunResult } from
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
-    clhCliAgents: clhCliAgentsService
+    cliAgents: cliAgentsService
   }
 }
 
-export const name = 'clh-cli-agents'
+export const name = 'cinlan-cli-agents'
 
 export const Config: ReturnType<typeof buildConfigSchema> = buildConfigSchema(Schema)
 
@@ -34,14 +34,14 @@ export function apply(ctx: Context, config: CliAgentsConfigInput): void {
   if (!config || typeof config !== 'object') {
     throw new CliAgentError(
       'invalid-config',
-      'clh-cli-agents 缺少配置。请在 cordis 配置项的 config 块提供 agents 字典'
-        + '（每个 agent：command/args/promptInjectionMode/...），示例见 @cinlan/clh-cli-agents/config/*.json',
+      'cinlan-cli-agents 缺少配置。请在 cordis 配置项的 config 块提供 agents 字典'
+        + '（每个 agent：command/args/promptInjectionMode/...），示例见 @cinlan/cli-agents/config/*.json',
     )
   }
-  ctx.plugin(clhCliAgentsService, config)
+  ctx.plugin(cliAgentsService, config)
 }
 
-export class clhCliAgentsService extends Service {
+export class cliAgentsService extends Service {
   private resolved!: ResolvedConfig
   private logger!: Logger
   private runtime!: AgentRuntime
@@ -49,13 +49,13 @@ export class clhCliAgentsService extends Service {
   private detectCache = new Map<string, DetectResult>()
 
   constructor(ctx: Context, config: CliAgentsConfigInput | undefined) {
-    super(ctx, 'clhCliAgents')
+    super(ctx, 'cliAgents')
     if (!config) {
       // 不静默兜底：组合里挂了本插件但没给配置 → 直接失败并说明怎么配
       throw new CliAgentError(
         'invalid-config',
-        'clh-cli-agents 缺少配置。请在 cordis 配置项的 config 块提供 agents 字典，'
-        + '示例见 @cinlan/clh-cli-agents/config/*.json',
+        'cinlan-cli-agents 缺少配置。请在 cordis 配置项的 config 块提供 agents 字典，'
+        + '示例见 @cinlan/cli-agents/config/*.json',
       )
     }
     this.configure(resolveConfig(config, process.cwd()), 'service-created')
@@ -66,13 +66,13 @@ export class clhCliAgentsService extends Service {
     const logFile = next.logDir ? logFilePathFor(next.logDir, 'cli-agents') : undefined
     if (logFile) void ensureLogDir(logFile)
     this.logger = createLogger({
-      component: 'clh-cli-agents',
+      component: 'cinlan-cli-agents',
       level: next.logLevel,
       filePath: logFile,
     })
     this.runtime = new AgentRuntime(next, this.logger)
     this.detectCache.clear()
-    this.logger.info(event, 'clh-cli-agents 服务已创建', { agents: [...next.agents.keys()] })
+    this.logger.info(event, 'cinlan-cli-agents 服务已创建', { agents: [...next.agents.keys()] })
   }
 
   protected async [Service.init](): Promise<void> {
@@ -80,7 +80,7 @@ export class clhCliAgentsService extends Service {
     // 资源清理：随 fiber 卸载终止全部运行中子进程
     this.ctx.effect(function* () {
       yield () => self.runtime.dispose()
-    }, 'clh-cli-agents runtime')
+    }, 'cinlan-cli-agents runtime')
 
     if (this.resolved.detectOnStart) {
       const results = await Promise.all(this.runtime.list().map((a) => this.runtime.detect(a.id)))

@@ -1,5 +1,5 @@
 /**
- * @cinlan/clh-cli-agents 日志层。
+ * @cinlan/cli-agents 日志层。
  *
  * 独立精简实现（不复用 knowledge-sync 的 logger）：本插件日志量小、无轮转需求，
  * 只需要「console 输出 + 可选 JSONL 落盘」两条通道，供 e2e 抓日志断言与事后审计。

@@ -1,11 +1,11 @@
 import { defineTool } from '@deepseek-ai/dsh-tools';
-export const name = 'clh-cli-agents-tools';
+export const name = 'cinlan-cli-agents-tools';
 export const inject = ['tools'];
 /** 主插件行未挂载时的明确报错（而不是 undefined 上取方法崩掉）。 */
 function svc(ctx) {
-    const s = ctx.get('clhCliAgents');
+    const s = ctx.get('cliAgents');
     if (!s) {
-        throw new Error('clh-cli-agents 主插件行未挂载（ctx.clhCliAgents 不可用）；请在组合中加入 "@cinlan/clh-cli-agents" 行');
+        throw new Error('cinlan-cli-agents 主插件行未挂载（ctx.cliAgents 不可用）；请在组合中加入 "@cinlan/cli-agents" 行');
     }
     return s;
 }

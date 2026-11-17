@@ -1,22 +1,22 @@
 /**
- * @cinlan/clh-cli-agents/tools 插件行：向 harness 工具流水线注册两个模型可调用工具。
- * 依赖 ctx.tools（base profile 提供）与 ctx.clhCliAgents（主插件行提供）。
+ * @cinlan/cli-agents/tools 插件行：向 harness 工具流水线注册两个模型可调用工具。
+ * 依赖 ctx.tools（base profile 提供）与 ctx.cliAgents（主插件行提供）。
  * 工具把结构化结果渲染为模型可读文本；服务未就绪时给出明确错误，不静默。
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { clhCliAgentsService } from './index.js'
+import type { cliAgentsService } from './index.js'
 import type { RunResult } from './runtime.js'
 
-export const name = 'clh-cli-agents-tools'
+export const name = 'cinlan-cli-agents-tools'
 
 export const inject = ['tools']
 
 /** 主插件行未挂载时的明确报错（而不是 undefined 上取方法崩掉）。 */
-function svc(ctx: Context): clhCliAgentsService {
-  const s = ctx.get('clhCliAgents') as clhCliAgentsService | undefined
+function svc(ctx: Context): cliAgentsService {
+  const s = ctx.get('cliAgents') as cliAgentsService | undefined
   if (!s) {
-    throw new Error('clh-cli-agents 主插件行未挂载（ctx.clhCliAgents 不可用）；请在组合中加入 "@cinlan/clh-cli-agents" 行')
+    throw new Error('cinlan-cli-agents 主插件行未挂载（ctx.cliAgents 不可用）；请在组合中加入 "@cinlan/cli-agents" 行')
   }
   return s
 }

@@ -1,5 +1,5 @@
 /**
- * clh-cli-agents 独立 CLI：脱离 harness 直接驱动已配置的外部 CLI agent。
+ * cinlan-cli-agents 独立 CLI：脱离 harness 直接驱动已配置的外部 CLI agent。
  *
  * 用途：手动验收（探测真机 claude/codex）、e2e 断言、脚本化调用。
  * 配置是 JSON 文件（结构同 cordis config 的 agents/log 块），resolveConfig 与插件共用同一条校验路径。
@@ -13,7 +13,7 @@ import { createLogger } from './logger.js';
 import { AgentRuntime } from './runtime.js';
 function usage() {
     return [
-        '用法: clh-cli-agents [--config <file>] <command>',
+        '用法: cinlan-cli-agents [--config <file>] <command>',
         '',
         'commands:',
         '  list                  列出已配置 agent（id / 注入方式 / 命令 / 描述）',
@@ -21,7 +21,7 @@ function usage() {
         '  run <id> <prompt...>  派发一次性任务并等待完成（输出 JSON 结果）',
         '',
         'options:',
-        '  --config <file>  配置文件路径（默认 ./clh-cli-agents.config.json）',
+        '  --config <file>  配置文件路径（默认 ./cinlan-cli-agents.config.json）',
     ].join('\n');
 }
 function exitCodeFor(exitCode, timedOut) {
@@ -32,7 +32,7 @@ function exitCodeFor(exitCode, timedOut) {
     return exitCode;
 }
 export async function main(argv) {
-    let configPath = './clh-cli-agents.config.json';
+    let configPath = './cinlan-cli-agents.config.json';
     const rest = [];
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
@@ -75,7 +75,7 @@ export async function main(argv) {
         console.error(err.message);
         return 2;
     }
-    const logger = createLogger({ component: 'clh-cli-agents-cli', level: resolved.logLevel, channel: 'stderr' });
+    const logger = createLogger({ component: 'cinlan-cli-agents-cli', level: resolved.logLevel, channel: 'stderr' });
     const runtime = new AgentRuntime(resolved, logger);
     try {
         switch (cmd) {
