@@ -42,7 +42,7 @@ window.__ModuleLoader__.load({
       previewRun: 'Preview', previewReplaced: 'replaced', previewFound: 'values found',
       previewEmpty: 'Paste text above and press Preview.',
       view: 'Redaction',
-      recTime: 'Time', recModel: 'Model', recBytes: 'Size', recValues: 'Values', recReplaced: 'Replaced', recTook: 'Took', recRestored: 'Restored',
+      recTime: 'Time', recModel: 'Model', recBytes: 'Size', recValues: 'Values', recReplaced: 'Replaced', recTook: 'Took',
       blocked: 'Blocked', warned: 'Sent as written',
       byRule: 'rule', byWord: 'word', byYours: 'custom', byKnown: 'known',
       refresh: 'Refresh', clear: 'Clear session records', empty: 'No redaction records for this session yet.',
@@ -52,17 +52,15 @@ window.__ModuleLoader__.load({
       before: 'Before', after: 'After',
       // detail view
       stepReceive: 'Received', stepFind: 'Found {n} values', stepReplace: 'Replaced {n} places',
-      stepSend: 'Sent to model', stepRestore: 'Restored {n} places',
+      stepSend: 'Sent to model',
       sizeBytes: '{size}', tookMs: '{ms} ms',
       stepReceiveSub: '{size}', stepFindSub: '{finders} · {ms} ms',
       stepReplaceSub: 'replaced with placeholders', stepSendSub: '{provider} · {model}',
-      stepRestoreSub: 'in the reply before handing it back',
       reqContent: 'Request content', showChangedOnly: 'only changed parts shown',
       tabOriginal: 'Original', tabMasked: 'What the vendor saw', tabDiff: 'Compare',
       noChange: 'unchanged sections collapsed', collapsed: 'collapsed',
       howMasked: 'How it was masked', valuesN: '{n} values', replacedN: '{n} replacements',
-      lookup: 'Found by', position: 'Position', inReply: 'In reply',
-      replyNo: 'not present', replyYes: 'restored {n} places',
+      lookup: 'Found by', position: 'Position',
       expand: 'Expand', collapse: 'Collapse',
       kind_EMAIL: 'Email', kind_PHONE: 'Phone', kind_ID_CARD: 'ID card', kind_BANK_CARD: 'Bank card',
       kind_SSN: 'SSN', kind_PASSPORT: 'Passport', kind_IBAN: 'IBAN', kind_BIRTHDAY: 'Birthday',
@@ -98,7 +96,7 @@ window.__ModuleLoader__.load({
       previewRun: '预览', previewReplaced: '处替换', previewFound: '个值',
       previewEmpty: '粘贴文本后点击预览。',
       view: '脱敏',
-      recTime: '时间', recModel: '模型', recBytes: '大小', recValues: '值', recReplaced: '替换', recTook: '耗时', recRestored: '还原',
+      recTime: '时间', recModel: '模型', recBytes: '大小', recValues: '值', recReplaced: '替换', recTook: '耗时',
       blocked: '已拦截', warned: '已照发',
       byRule: '规则', byWord: '你的词', byYours: '自定义', byKnown: '已知',
       refresh: '刷新', clear: '清空本会话记录', empty: '本会话还没有脱敏记录。',
@@ -108,17 +106,15 @@ window.__ModuleLoader__.load({
       before: '变更前', after: '变更后',
       // detail view
       stepReceive: '收到', stepFind: '发现 {n} 个值', stepReplace: '替换 {n} 处',
-      stepSend: '发送模型', stepRestore: '换回 {n} 处',
+      stepSend: '发送模型',
       sizeBytes: '{size}', tookMs: '{ms} ms',
       stepReceiveSub: '{size}', stepFindSub: '{finders} · {ms} ms',
       stepReplaceSub: '换成占位符', stepSendSub: '{provider} · {model}',
-      stepRestoreSub: '在回复交回之前',
       reqContent: '请求内容', showChangedOnly: '只显示有改动的部分',
       tabOriginal: '原文', tabMasked: '厂商看到的样子', tabDiff: '对照',
       noChange: '段没有改动', collapsed: '已折叠',
       howMasked: '怎么遮的', valuesN: '{n} 个值', replacedN: '{n} 处',
-      lookup: '查找方式', position: '位置', inReply: '回复里',
-      replyNo: '没有出现', replyYes: '换回 {n} 处',
+      lookup: '查找方式', position: '位置',
       expand: '展开', collapse: '收起',
       kind_EMAIL: '邮箱', kind_PHONE: '手机号', kind_ID_CARD: '身份证', kind_BANK_CARD: '银行卡',
       kind_SSN: 'SSN', kind_PASSPORT: '护照', kind_IBAN: 'IBAN', kind_BIRTHDAY: '生日',
@@ -214,6 +210,8 @@ window.__ModuleLoader__.load({
 .dsr-content-col.right{color:var(--dsw-alias-label-primary)}
 .dsr-collapsed{padding:8px 12px;font-size:11px;color:var(--dsw-alias-label-tertiary);border-bottom:1px solid var(--dsw-alias-border-l2);cursor:pointer}
 .dsr-collapsed:hover{background:var(--dsw-alias-bg-layer-2,rgba(128,128,128,.06))}
+.dsr-hl{background:color-mix(in srgb,var(--dsw-alias-brand-primary) 16%,transparent);color:var(--dsw-alias-brand-primary);border-radius:3px;padding:0 2px}
+.dsr-count{font-size:10px;line-height:1;padding:3px 6px;border-radius:5px;background:color-mix(in srgb,var(--dsw-alias-brand-primary) 12%,transparent);color:var(--dsw-alias-brand-primary);flex:none}
 .dsr-side{width:300px;flex:none;display:flex;flex-direction:column;gap:0}
 .dsr-side-head{padding:12px 16px;border-bottom:1px solid var(--dsw-alias-border-l2);display:flex;align-items:center;justify-content:space-between}
 .dsr-side-title{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}
@@ -441,18 +439,16 @@ window.__ModuleLoader__.load({
 
       const finders = [...new Set((rec.values || []).map(v => v.by))]
       const finderNames = finders.map(f => t('by' + f[0].toUpperCase() + f.slice(1))).join(', ')
-      const restoredTotal = rec.restored || 0
-      const hasRestore = restoredTotal > 0
 
       const steps = [
         { num: 1, title: t('stepReceive'), sub: t('stepReceiveSub', { size: fmtBytes(rec.bytes) }) },
         { num: 2, title: t('stepFind', { n: rec.values.length }), sub: t('stepFindSub', { finders: finderNames, ms: rec.tookMs }) },
         { num: 3, title: t('stepReplace', { n: rec.replaced }), sub: t('stepReplaceSub') },
         { num: 4, title: t('stepSend'), sub: t('stepSendSub', { provider: rec.provider, model: rec.model }) },
-        { num: 5, title: t('stepRestore', { n: restoredTotal }), sub: t('stepRestoreSub') },
       ]
 
-      // build content rows from values: group by path, show changed snippets
+      // build content rows from values: group by path, collect every placeholder
+      // hit at that path so the masked column can highlight them inline.
       const rows = []
       const seenPaths = new Map()
       for (const v of rec.values || []) {
@@ -460,10 +456,36 @@ window.__ModuleLoader__.load({
         const existing = seenPaths.get(v.path)
         if (existing) {
           existing.count++
+          if (v.placeholder) existing.phs.push(v.placeholder)
           continue
         }
-        seenPaths.set(v.path, { path: v.path, before: v.before, after: v.after || '', count: 1 })
+        seenPaths.set(v.path, { path: v.path, before: v.before, after: v.after || '', count: 1, phs: v.placeholder ? [v.placeholder] : [] })
         rows.push(seenPaths.get(v.path))
+      }
+
+      // label by path prefix: system / messages[i].content / tools[i].description
+      const roleOf = (p) => p.startsWith('system') ? 'system'
+        : p.startsWith('tools') ? 'tool'
+        : p === 'preview' ? 'preview'
+        : 'message'
+
+      // scroll targets reset per record: keep the detail head pinned at top.
+      const scrollRefs = useRef({ content: null, side: null })
+      useEffect(() => {
+        if (scrollRefs.current.content) scrollRefs.current.content.scrollTop = 0
+        if (scrollRefs.current.side) scrollRefs.current.side.scrollTop = 0
+        setSelVal(null)
+        setExpanded(false)
+      }, [rec.id])
+
+      // inline-highlight every stored placeholder inside masked text
+      const Highlight = ({ text, marks }) => {
+        if (typeof text !== 'string' || !marks || marks.length === 0) return text
+        const uniq = [...new Set(marks)].filter(Boolean).sort((a, b) => b.length - a.length)
+        if (uniq.length === 0) return text
+        const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const parts = text.split(new RegExp('(' + uniq.map(esc).join('|') + ')', 'g'))
+        return parts.map((p, i) => uniq.includes(p) ? h('mark', { key: i, className: 'dsr-hl' }, p) : p)
       }
 
       const KIND_COLOR = (k) => {
@@ -522,21 +544,22 @@ window.__ModuleLoader__.load({
                   [['original', t('tabOriginal')], ['masked', t('tabMasked')], ['diff', t('tabDiff')]].map(([k, label]) =>
                     h('button', { key: k, type: 'button', className: contentTab === k ? 'on' : '', onClick: () => setContentTab(k) }, label))),
               ]),
-              h('div', { key: 'content', className: 'dsr-content' + (expanded ? '' : ' clamped') },
+              h('div', { key: 'content', ref: (el) => { scrollRefs.current.content = el }, className: 'dsr-content' + (expanded ? '' : ' clamped') },
                 rows.length === 0
                   ? h('div', { className: 'dsr-empty', style: { padding: 16 } }, t('empty'))
                   : rows.map(r =>
                     h('div', { key: r.path, className: 'dsr-content-row' }, [
                       h('div', { key: 'label', className: 'dsr-content-label' }, [
-                        h('span', { key: 'role', className: 'role' }, 'developer'),
+                        h('span', { key: 'role', className: 'role' }, roleOf(r.path)),
                         h('span', { key: 'path' }, r.path),
+                        r.count > 1 ? h('span', { key: 'n', className: 'dsr-count' }, '×' + r.count) : null,
                       ]),
                       h('div', { key: 'main', className: 'dsr-content-main' },
                         contentTab === 'original' ? h('div', { className: 'dsr-content-col left' }, r.before) :
-                        contentTab === 'masked' ? h('div', { className: 'dsr-content-col right' }, r.after) :
+                        contentTab === 'masked' ? h('div', { className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs })) :
                         [
                           h('div', { key: 'l', className: 'dsr-content-col left' }, r.before),
-                          h('div', { key: 'r', className: 'dsr-content-col right' }, r.after),
+                          h('div', { key: 'r', className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs })),
                         ]),
                     ]))),
               rows.length > 0 ? h('div', { key: 'exp', className: 'dsr-expandbar' },
@@ -552,7 +575,7 @@ window.__ModuleLoader__.load({
                 h('span', { key: 't', className: 'dsr-side-title' }, t('howMasked')),
                 h('span', { key: 's', className: 'dsr-side-sub' }, t('valuesN', { n: rec.values.length }) + ' · ' + t('replacedN', { n: rec.replaced })),
               ]),
-              h('div', { key: 'list', className: 'dsr-side-list' },
+              h('div', { key: 'list', ref: (el) => { scrollRefs.current.side = el }, className: 'dsr-side-list' },
                 (rec.values || []).map((v, i) =>
                   h('div', {
                     key: i,
@@ -569,7 +592,6 @@ window.__ModuleLoader__.load({
                     h('div', { key: 'meta', className: 'dsr-side-meta' }, [
                       h('span', { key: 'by' }, [h('b', { key: 'b' }, t('lookup')), h('span', { key: 'v' }, t('by' + v.by[0].toUpperCase() + v.by.slice(1)))]),
                       h('span', { key: 'path' }, [h('b', { key: 'b' }, t('position')), h('span', { key: 'v' }, v.path)]),
-                      h('span', { key: 'rs' }, [h('b', { key: 'b' }, t('inReply')), h('span', { key: 'v' }, v.restored > 0 ? t('replyYes', { n: v.restored }) : t('replyNo'))]),
                     ]),
                   ]))),
             ]),
