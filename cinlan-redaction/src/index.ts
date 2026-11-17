@@ -61,6 +61,9 @@ export const Config: AnySchema = Schema.object({
   records: Schema.boolean().default(true).description('Keep redaction records for the detail tab.'),
 })
 
+// settings 只投影 volatile 字段；逐字段标记，保留对象形状。
+for (const field of Object.values(Config.dict) as AnySchema[]) field.volatile()
+
 export interface RedactionConfig {
   secrets: boolean
   personal: boolean
@@ -109,9 +112,16 @@ export class RedactionService extends Service {
     namespace: 'redaction',
   })
 
-  constructor(ctx: Context, private config: RedactionConfig) {
+  private config: RedactionConfig
+
+  constructor(ctx: Context, config: RedactionConfig) {
     super(ctx, 'redaction')
     this.logger = ctx.logger('redaction')
+    this.config = this.resolveConfig(config)
+    ctx.on('internal/update', (nextConfig: RedactionConfig, next: () => void) => {
+      this.config = this.resolveConfig(nextConfig)
+      return next()
+    })
     // stable anchor: explicit override → DSH_HOME → ~/.dsh. A process.cwd()
     // fallback made the HMAC key wander with the launch directory and broke
     // cross-restart placeholder stability.
@@ -125,15 +135,31 @@ export class RedactionService extends Service {
     this.store = new PlaceholderStore(join(stateDir, 'placeholder-key'))
   }
 
+  /** 解开 Cordis 的实时配置引用；每次更新使用同一个已校验快照。 */
+  private resolveConfig(config: RedactionConfig): RedactionConfig {
+    return Object.fromEntries(Object.entries(config).map(([key, value]) => [
+      key, value && typeof value.get === 'function' ? value.get() : value,
+    ])) as unknown as RedactionConfig
+  }
+
   protected [Service.init](): void {
     const self = this
-    // 'llm/stream' is declared by @deepseek-ai/dsh-llm's Events merge; this
-    // plugin deliberately depends only on cordis, so register through a
-    // widened context view.
-    const events = this.ctx as unknown as {
-      on(event: 'llm/stream', listener: (options: unknown, next: () => AsyncIterable<AnyChunk>) => AsyncIterable<AnyChunk>): unknown
+    // 两套宿主的 llm/stream next() 都闭包捕获原请求且请求已冻结。
+    // 包装共同的 adapterStream 边界，保留 prepared dispatch 与 middleware。
+    // 这是宿主内部接口；缺失时拒绝加载，避免静默漏脱敏。
+    const llm = this.ctx.get('llm') as unknown as {
+      adapterStream(options: Record<string, unknown>, prepared?: unknown): AsyncIterable<AnyChunk>
     }
-    events.on('llm/stream', (options, next) => self.intercept(options as never, next))
+    if (typeof llm?.adapterStream !== 'function') throw new Error('redaction: incompatible LLM adapterStream boundary')
+    const original = llm.adapterStream
+    const descriptor = Object.getOwnPropertyDescriptor(llm, 'adapterStream')
+    const wrapped = (options: Record<string, unknown>, prepared?: unknown) =>
+      self.intercept(options, masked => original.call(llm, masked, prepared))
+    Object.defineProperty(llm, 'adapterStream', { configurable: true, writable: true, value: wrapped })
+    this.ctx.effect(() => () => {
+      if (descriptor) Object.defineProperty(llm, 'adapterStream', descriptor)
+      else Reflect.deleteProperty(llm, 'adapterStream')
+    })
   }
 
   private engineOptions(): EngineOptions {
@@ -205,13 +231,13 @@ export class RedactionService extends Service {
     return { replaced: counter.replaced, hits, blocked }
   }
 
-  private intercept(options: never, next: () => AsyncIterable<AnyChunk>): AsyncIterable<AnyChunk> {
+  private intercept(options: Record<string, unknown>, next: (options: Record<string, unknown>) => AsyncIterable<AnyChunk>): AsyncIterable<AnyChunk> {
     const started = Date.now()
     const opts = options as unknown as Record<string, unknown>
-    if (!this.enabled() || opts === null || typeof opts !== 'object') return next()
+    if (!this.enabled() || opts === null || typeof opts !== 'object') return next(opts)
     // skipProviders: these provider routes get requests exactly as written
     const provider = String(opts.provider ?? '')
-    if (provider && (this.config.skipProviders ?? []).includes(provider)) return next()
+    if (provider && (this.config.skipProviders ?? []).includes(provider)) return next(opts)
     const sessionId = typeof opts.sessionId === 'string' ? opts.sessionId : ''
     let recordId = -1
     let hits: RedactionRecordValue[] = []
@@ -222,7 +248,8 @@ export class RedactionService extends Service {
       let replaced = 0
       let blocked = false
       try {
-        clone = structuredClone(opts) as Record<string, unknown>
+        // AbortSignal 等运行时句柄保持原引用，只复制 maskRequest 改写的内容。
+        clone = { ...opts }
         const masked = self.maskRequest(clone)
         replaced = masked.replaced
         blocked = masked.blocked
@@ -250,7 +277,7 @@ export class RedactionService extends Service {
       if (blocked) {
         throw Object.assign(new Error('redaction: request blocked by a block action'), { code: 'REDACTION_BLOCKED' })
       }
-      const stream = next()
+      const stream = next(clone)
       const textRestorers = new Map<number, StreamRestorer>()
       const argRestorers = new Map<string, { r: StreamRestorer; id?: string | undefined; index?: number | undefined }>()
       // per-request restore tally: total + per-placeholder counts for the record
