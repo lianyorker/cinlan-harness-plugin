@@ -1,0 +1,24 @@
+{
+  "queueId": "q-mwk63s76-064f25c5",
+  "kind": "memory",
+  "id": "mem-b-local-note",
+  "scope": "",
+  "node": "node-b",
+  "payload": {
+    "kind": "memory",
+    "id": "mem-b-local-note",
+    "scope": "",
+    "title": "B Local Note",
+    "content": "node-b 独有记忆，等待管理员审批后供 A 读取。",
+    "tags": [
+      "b-local"
+    ],
+    "meta": {
+      "file": "b-local-note.md"
+    },
+    "hash": "3de59934d24a64acd65d4eb9f4a3ea3dd791ba09359adb5dfd75f66d282f2e73",
+    "updatedAt": "2026-11-08T11:05:00.000Z",
+    "force": false
+  },
+  "receivedAt": "2026-11-17T04:03:42.594Z"
+}

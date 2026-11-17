@@ -1,0 +1,31 @@
+{
+  "kind": "skill",
+  "id": "demo-greet",
+  "scope": "",
+  "title": "demo-greet",
+  "description": "cinlan-knowledge-sync demo skill：按问候语模板生成回复",
+  "files": [
+    {
+      "path": "SKILL.md",
+      "encoding": "utf8",
+      "content": "---\nname: demo-greet\ndescription: cinlan-knowledge-sync demo skill：按问候语模板生成回复\n---\n\n# demo-greet\n\n用法：读取 templates/greeting.txt 并按名字渲染。"
+    },
+    {
+      "path": "templates/greeting.txt",
+      "encoding": "utf8",
+      "content": "Hello, {{name}}! (from node-a demo-greet)"
+    }
+  ],
+  "tags": [],
+  "meta": {
+    "root": "D:\\Company\\cinlan\\apps\\cinlan-harness-plugin\\cinlan-knowledge-sync\\demo\\node-a\\skills"
+  },
+  "hash": "7ff3d50f5513747b0c70321b5eaec8f83fafd9f4d8669a4c09d1d7346422dce5",
+  "version": 1,
+  "seq": 2,
+  "sourceNode": "node-a",
+  "updatedAt": "2026-11-17T04:03:42.183Z",
+  "approvedBy": "admin",
+  "approvedAt": "2026-11-17T04:03:42.336Z",
+  "cleanupFlag": null
+}

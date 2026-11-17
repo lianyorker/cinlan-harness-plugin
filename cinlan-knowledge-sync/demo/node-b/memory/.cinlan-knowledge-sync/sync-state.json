@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "cursor": 4,
+  "pushed": {
+    "mem-b-local-note": {
+      "kind": "memory",
+      "scope": "",
+      "hash": "3de59934d24a64acd65d4eb9f4a3ea3dd791ba09359adb5dfd75f66d282f2e73",
+      "queueId": "q-mwk63s76-064f25c5",
+      "status": "pending",
+      "at": "2026-11-17T04:03:42.601Z"
+    },
+    "mem-deploy-notes": {
+      "kind": "memory",
+      "scope": "",
+      "hash": "0e201dad9479ef1887ac995347baadec414eb8fbd27269a5b7d35649cdc65a29",
+      "status": "conflict",
+      "reason": "服务端已存在该 id（v1）且内容不同；先 pull 确认后重推，或 force 覆盖",
+      "version": 1,
+      "at": "2026-11-17T04:03:42.601Z"
+    },
+    "skill-b-own-skill": {
+      "kind": "skill",
+      "scope": "",
+      "hash": "35337622d91774d50b59cda9f4d8c9b899bd6821b7ff57fc5fc998166b10acb2",
+      "queueId": "q-mwk63s7a-523b7580",
+      "status": "pending",
+      "at": "2026-11-17T04:03:42.601Z"
+    },
+    "skill-demo-greet": {
+      "kind": "skill",
+      "scope": "",
+      "hash": "7ff3d50f5513747b0c70321b5eaec8f83fafd9f4d8669a4c09d1d7346422dce5",
+      "status": "published-duplicate",
+      "version": 1,
+      "at": "2026-11-17T04:03:42.601Z"
+    }
+  },
+  "conflicts": [
+    {
+      "ts": "2026-11-17T04:03:42.578Z",
+      "direction": "pull",
+      "kind": "memory",
+      "id": "mem-deploy-notes",
+      "detail": "本地内容与总库 v1 不同；远端副本已存到 D:\\Company\\cinlan\\apps\\cinlan-harness-plugin\\cinlan-knowledge-sync\\demo\\node-b\\memory\\.cinlan-knowledge-sync\\conflicts\\memory\\mem-deploy-notes-v1-1794888222574.md"
+    },
+    {
+      "ts": "2026-11-17T04:03:42.601Z",
+      "direction": "push",
+      "kind": "memory",
+      "id": "mem-deploy-notes",
+      "detail": "服务端已存在该 id（v1）且内容不同；先 pull 确认后重推，或 force 覆盖"
+    }
+  ],
+  "lastSyncAt": "2026-11-17T04:03:42.601Z",
+  "lastPullAt": "2026-11-17T04:03:49.077Z"
+}

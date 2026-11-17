@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "cursor": 2,
+  "pushed": {
+    "mem-deploy-notes": {
+      "kind": "memory",
+      "scope": "",
+      "hash": "7c8b0ce6336e1d5b2109ea6749064bf1c184bc411ad0e875c0b9da5e4d2bb5c1",
+      "queueId": "q-mwk63rvx-2d628315",
+      "status": "approved",
+      "at": "2026-11-17T04:03:42.201Z",
+      "version": 1,
+      "seq": 1
+    },
+    "mem-project-conventions": {
+      "kind": "memory",
+      "scope": "",
+      "hash": "f76d751871afbee7ed4ef0f4564c83026a5bb1d88398dc88dae1d7c23e6a0436",
+      "queueId": "q-mwk63rw0-08ddf45e",
+      "status": "rejected",
+      "at": "2026-11-17T04:03:42.201Z",
+      "reason": "标题太泛，请补充适用范围"
+    },
+    "mem-runbook-expired": {
+      "kind": "memory",
+      "scope": "",
+      "hash": "c432af429a6e8c79347ec7543ba26b4cf3e16371c018f07a041c581c79adad30",
+      "queueId": "q-mwk63rw3-69924c6d",
+      "status": "pending",
+      "at": "2026-11-17T04:03:42.201Z"
+    },
+    "skill-demo-greet": {
+      "kind": "skill",
+      "scope": "",
+      "hash": "7ff3d50f5513747b0c70321b5eaec8f83fafd9f4d8669a4c09d1d7346422dce5",
+      "queueId": "q-mwk63rw5-22d4c354",
+      "status": "approved",
+      "at": "2026-11-17T04:03:42.201Z",
+      "version": 1,
+      "seq": 2
+    }
+  },
+  "conflicts": [],
+  "lastSyncAt": "2026-11-17T04:03:42.201Z",
+  "lastPullAt": "2026-11-17T04:03:47.248Z"
+}

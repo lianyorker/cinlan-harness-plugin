@@ -1,0 +1,35 @@
+{
+  "q-mwk63rvx-2d628315": {
+    "status": "approved",
+    "kind": "memory",
+    "id": "mem-deploy-notes",
+    "version": 1,
+    "seq": 1,
+    "at": "2026-11-17T04:03:42.322Z",
+    "by": "admin"
+  },
+  "q-mwk63rw5-22d4c354": {
+    "status": "approved",
+    "kind": "skill",
+    "id": "demo-greet",
+    "version": 1,
+    "seq": 2,
+    "at": "2026-11-17T04:03:42.336Z",
+    "by": "admin"
+  },
+  "q-mwk63rw0-08ddf45e": {
+    "status": "rejected",
+    "reason": "标题太泛，请补充适用范围",
+    "at": "2026-11-17T04:03:42.351Z",
+    "by": "admin"
+  },
+  "q-mwk63rw3-69924c6d": {
+    "status": "approved",
+    "kind": "memory",
+    "id": "mem-runbook-expired",
+    "version": 1,
+    "seq": 3,
+    "at": "2026-11-17T04:03:47.452Z",
+    "by": "admin"
+  }
+}
