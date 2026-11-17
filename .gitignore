@@ -4,3 +4,7 @@ node_modules/
 Thumbs.db
 docs/
 !cinlan-knowledge/docs/
+cinlan-knowledge-sync/demo/hub-data/
+cinlan-knowledge-sync/demo/node-*/oneshot-*.json
+cinlan-knowledge-sync/demo/node-*/memory/.cinlan-knowledge-sync/
+cinlan-knowledge-sync/demo/node-*/skills/*/.cinlan-knowledge-sync.json
