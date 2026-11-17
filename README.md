@@ -6,19 +6,20 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 
 | 子目录 | 包名 | 说明 |
 |---|---|---|
-| `clh-knowledge-sync/` | `@cinlan/clh-knowledge-sync` | 跨实例/跨节点知识同步（记忆文件 + skills + 后续习惯/会话记忆）：节点同步服务 + hub 总库进程 + 4 个模型工具。详见 `clh-knowledge-sync/README.md` |
-| `clh-cli-agents/` | `@cinlan/clh-cli-agents` | 外部 CLI agent 通用集成（orca 式声明目录：claude/codex/... 的探测、prompt 注入、headless 运行）：服务 + 2 个模型工具 + 独立 CLI。详见 `clh-cli-agents/README.md` |
+| `cinlan-knowledge-sync/` | `@cinlan/knowledge-sync` | 跨实例/跨节点知识同步（记忆文件 + skills + 后续习惯/会话记忆）：节点同步服务 + hub 总库进程 + 4 个模型工具。详见 `cinlan-knowledge-sync/README.md` |
+| `cinlan-cli-agents/` | `@cinlan/cli-agents` | 外部 CLI agent 通用集成（orca 式声明目录：claude/codex/... 的探测、prompt 注入、headless 运行）：服务 + 2 个模型工具 + 独立 CLI。详见 `cinlan-cli-agents/README.md` |
+| `cinlan-redaction/` | `@cinlan/redaction` | 出站脱敏（magpie 式）：llm/stream waterfall 上把敏感值换成稳定 HMAC 占位符、回复换回，规则+词表引擎 + settings 配置页（预览/记录）。详见 `cinlan-redaction/README.md` |
 
 （新增插件在此登记一行。）
 
 ## 命名约定
 
-- **包名 `@cinlan/clh-<slug>`**：`clh` = cinlan-harness 插件线。slug 按**能力域**命名，要盖得住负载演进——`knowledge-sync` 装得下记忆/skills/习惯/会话记忆，`skills-sync` 这类只盖子集的名字别用。
-- **目录名** = 包名去 scope：`clh-knowledge-sync/`。
-- **entry id / configForms 命名空间** = 包 basename（含 `clh-` 前缀）：`clh-knowledge-sync`、`clh-knowledge-sync-tools`——一个名字走到底，Loader 条目 id、settings 命名空间、UI 里 `configForms.get()` 的键全用它，不拆短。
-- **服务名** = camelCase basename：`clhKnowledgeSync`（`super(ctx, 'clhKnowledgeSync')` → `ctx.clhKnowledgeSync`）。
-- **locale NS** = `settings.<entry-id>`；**bin 命令** = basename + `-hub`：`clh-knowledge-sync` / `clh-knowledge-sync-hub`。
-- **隐藏状态目录** = `.<包 basename>`（`.clh-knowledge-sync`，default `stateDirName`）；**skill 来源 marker** 同名 `.<包 basename>.json`（`.clh-knowledge-sync.json`）。改名后遗留的旧名 marker 会被当普通文件同步一次，可接受、不特意兼容。
+- **包名 `@cinlan/<slug>`**：`cinlan` scope 是本插件线（对齐 `@cinlan/knowledge-*`）。slug 按**能力域**命名，要盖得住负载演进——`knowledge-sync` 装得下记忆/skills/习惯/会话记忆，`skills-sync` 这类只盖子集的名字别用。
+- **目录名** = 包名去 scope：`cinlan-knowledge-sync/`。
+- **entry id / configForms 命名空间** = `<slug>`（`knowledge-sync`、`knowledge-sync-tools`）——一个名字走到底，Loader 条目 id（`export const name` / patch yml 的 `id`）、settings 命名空间、UI 里 `configForms.get()` 的键全用它，不拆短。
+- **服务名** = camelCase basename：`knowledgeSync`（`super(ctx, 'knowledgeSync')` → `ctx.knowledgeSync`）。
+- **locale NS** = `settings.<entry-id>`；**bin 命令** = `<slug>` / `<slug>-hub`：`knowledge-sync` / `knowledge-sync-hub`。
+- **隐藏状态目录** = `.<包 basename>`（`.cinlan-knowledge-sync`，default `stateDirName`）；**skill 来源 marker** 同名 `.<包 basename>.json`（`.cinlan-knowledge-sync.json`）。改名后遗留的旧名 marker 会被当普通文件同步一次，可接受、不特意兼容。
 
 ## 兼容红线：一套代码，两套 harness
 
@@ -41,7 +42,7 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 
 ```jsonc
 {
-  "name": "@cinlan/clh-<slug>",
+    "name": "@cinlan/<slug>",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -56,7 +57,7 @@ deepseek-harness / cinlan-harness **通用插件**（树外组合包）存放地
 }
 ```
 
-- `dsh.bundle.patch` 声明组合包补丁；`cordis.patch.yml` 用 `- insert:` 插行（每行 `id` + `name`，`name` 可指 `exports` 子路径，如 `'@cinlan/clh-knowledge-sync/tools'`）。
+- `dsh.bundle.patch` 声明组合包补丁；`cordis.patch.yml` 用 `- insert:` 插行（每行 `id` + `name`，`name` 可指 `exports` 子路径，如 `'@cinlan/knowledge-sync/tools'`）。
 - `files` 白名单必须含 `cordis.patch.yml` 和 `lib/`（或等价构建产物），漏了会让 `file:`/`npm pack` 安装丢文件。
 - 行内如需依赖其他插件行（如 base 的 `tools` 服务），在宿主行缺失时应保持 PENDING 而非拖垮整组——设计补丁时让无依赖行先独立可挂。
 - 构建产物进 `lib/`（`tsc -p tsconfig.json`）；装 `file:` 的拷贝语义要求安装前已构建。
@@ -86,7 +87,7 @@ clh plugin --profile <name> add file:<本包路径>
 dsh plugin --profile <profile> allow-version <包名>@<版本> --dsh-version <运行时版本> --accept-risk
 ```
 
-豁免按 `包@版本 + 运行时版本` 记进 profile 的 `compatibility.json`，插件升版或 harness 升级后需重授。已实测：Desktop 0.2.2-rc.1 装 `@cinlan/clh-knowledge-sync@0.1.0` 需豁免一次（豁免按 包@版本+运行时版本 键控，改包名等于新豁免）。
+豁免按 `包@版本 + 运行时版本` 记进 profile 的 `compatibility.json`，插件升版或 harness 升级后需重授。已实测：Desktop 0.2.2-rc.1 装 `@cinlan/knowledge-sync@0.1.0` 需豁免一次（豁免按 包@版本+运行时版本 键控，改包名等于新豁免）。
 
 ### file: 与 link:
 
@@ -110,7 +111,7 @@ dsh plugin --profile <profile> allow-version <包名>@<版本> --dsh-version <�
 - **挂页面**：`ctx.slots.inject('settings.section', () => ctx.slots.register({ name, id, order, label, locale, inject }, Component))`；文案走 `ctx.locale.register/bind`（en/zh 至少两份）；样式注入 `<style data-plugin-css="<包名>">`，优先复用宿主 `--dsw-alias-*` 变量，不造第二套色板。rc.1 导航就是 `entries('settings.section')` 的 `{id,order,label}` 平铺列表，不需要分组元数据；fork alpha.2 有 `settingsMetadata`（registerSection/registerItems 做分组/搜索），但**它不在双运行时共有服务集里，双兼容插件别碰**。页面拿不到命名空间时显示 `unavailable` 占位——通常是条目未激活（config 校验失败/行 id 不匹配），不是页面 bug。
 - **实测差异（Desktop 0.2.2-rc.1 vs fork alpha.2）**：`settingsMetadata` 服务在 rc.1 不存在，且动态插件 ctx 对**未 inject 的服务访问直接 `rejectGuard` 抛错**——没有"读到 undefined"的防御式写法，只能在 inject 里声明两套运行时都有的服务、其余一律不碰；进 inject 门禁的必须是共有服务（`slots`/`locale`/`configForms`），否则 entry 永远 pending 拖垮 web boot。`slots.inject` 的回调**别用 `function*()`**——rc.1 不迭代生成器、函数体被当返回值丢弃，注册静默丢失（页面不出现）。统一写 `() => disposer`（多个注册就 `() => () => disposers.forEach(d => d())`），两套运行时通吃。
 - inject 依赖包（`dsh.client.inject`）是**包名**：`@deepseek-ai/dsh-client-locale`（locale 服务）、`@deepseek-ai/dsh-client-ui-settings`（configForms）等；`export const inject` 则是**服务名**：`['slots','locale','configForms']`——两处别混，且只放两套运行时都存在的名字。
-- 参考实现：`clh-knowledge-sync/client.js`。
+- 参考实现：`cinlan-knowledge-sync/client.js`。
 
 ## 新插件验收标准
 
