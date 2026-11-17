@@ -11,7 +11,7 @@ import { join } from 'node:path'
 import { maskText, StreamRestorer, type EngineOptions } from './engine.ts'
 import { RecordBuffer } from './records.ts'
 import { PlaceholderStore } from './store.ts'
-import type { RedactionRecordValue } from './types.ts'
+import type { RedactionRecordValue, RedactionSegment } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -182,53 +182,68 @@ export class RedactionService extends Service {
     return c.secrets || c.personal || (c.words?.length ?? 0) > 0 || (c.rules?.length ?? 0) > 0
   }
 
+  /** Detail view 片段上限：比 200 大得多，UI 自己做折叠/展开。 */
+  private static readonly SNIP = 2000
+
   /** Mask one text-bearing field of a cloned request; returns true when something was replaced. */
   private maskValue(value: string, path: string, hits: RedactionRecordValue[], counter: { replaced: number }): string {
-    const before = value.length > 200 ? value.slice(0, 200) + '…' : value
+    const before = value.length > RedactionService.SNIP ? value.slice(0, RedactionService.SNIP) + '…' : value
     const res = maskText(value, this.engineOptions(), this.store, (hit, _v, p) => {
       const existing = hits.find(h => h.placeholder === hit.placeholder)
       if (existing) existing.n++
       else hits.push({ placeholder: hit.placeholder, kind: hit.kind, by: hit.by, head: hit.head, len: hit.len, n: 1, action: hit.action, path: p, restored: 0, before })
     }, path)
     counter.replaced += res.replaced
-    const after = res.text.length > 200 ? res.text.slice(0, 200) + '…' : res.text
+    const after = res.text.length > RedactionService.SNIP ? res.text.slice(0, RedactionService.SNIP) + '…' : res.text
     for (const h of hits) {
       if (h.before === before && !h.after) h.after = after
     }
     return res.text
   }
 
-  private maskRequest(options: Record<string, unknown>): { replaced: number; hits: RedactionRecordValue[]; blocked: boolean } {
+  private maskRequest(options: Record<string, unknown>): { replaced: number; hits: RedactionRecordValue[]; blocked: boolean; segments: RedactionSegment[] } {
     const hits: RedactionRecordValue[] = []
     const counter = { replaced: 0 }
-    const maskTextAt = (v: unknown, path: string): unknown => {
-      if (typeof v === 'string') return this.maskValue(v, path, hits, counter)
-      if (Array.isArray(v)) return v.map((x, i) => maskTextAt(x, `${path}[${i}]`))
+    const segments: RedactionSegment[] = []
+    // 段清单：详情页拿它渲染「未改动」折叠卡；role 仅记录消息角色，不落值。
+    const maskTextAt = (v: unknown, path: string, role?: string): unknown => {
+      if (typeof v === 'string') {
+        const out = this.maskValue(v, path, hits, counter)
+        segments.push({ path, bytes: v.length, changed: out !== v, ...(role ? { role } : {}) })
+        return out
+      }
+      if (Array.isArray(v)) return v.map((x, i) => maskTextAt(x, `${path}[${i}]`, role))
       if (v !== null && typeof v === 'object') {
         const out: Record<string, unknown> = {}
-        for (const [k, x] of Object.entries(v)) out[k] = maskTextAt(x, `${path}.${k}`)
+        for (const [k, x] of Object.entries(v)) out[k] = maskTextAt(x, `${path}.${k}`, role)
         return out
       }
       return v
     }
-    if (typeof options.system === 'string') options.system = this.maskValue(options.system, 'system', hits, counter)
+    if (typeof options.system === 'string') options.system = maskTextAt(options.system, 'system', 'system') as string
     if (Array.isArray(options.messages)) {
       options.messages = (options.messages as AnyMessage[]).map((m, i) => {
-        const masked = maskTextAt(m.content, `messages[${i}].content`)
+        const role = typeof m.role === 'string' ? m.role : 'message'
+        const masked = maskTextAt(m.content, `messages[${i}].content`, role)
         return masked === m.content ? m : { ...m, content: masked }
       })
     }
     if (Array.isArray(options.tools)) {
       options.tools = (options.tools as Array<Record<string, unknown>>).map((t, i) => {
         if (typeof t.description === 'string') {
-          const d = this.maskValue(t.description, `tools[${i}].description`, hits, counter)
+          const d = maskTextAt(t.description, `tools[${i}].description`, 'tool') as string
           return d === t.description ? t : { ...t, description: d }
         }
         return t
       })
     }
+    // 其它顶层字符串字段（model 等）不遮，但进未改动段清单
+    for (const [k, v] of Object.entries(options)) {
+      if (k === 'system' || k === 'messages' || k === 'tools') continue
+      if (typeof v === 'string') segments.push({ path: k, bytes: v.length, changed: false })
+    }
     const blocked = hits.some(h => h.action === 'block')
-    return { replaced: counter.replaced, hits, blocked }
+    return { replaced: counter.replaced, hits, blocked, segments }
   }
 
   private intercept(options: Record<string, unknown>, next: (options: Record<string, unknown>) => AsyncIterable<AnyChunk>): AsyncIterable<AnyChunk> {
@@ -247,6 +262,7 @@ export class RedactionService extends Service {
       let clone: Record<string, unknown>
       let replaced = 0
       let blocked = false
+      let segments: RedactionSegment[] = []
       try {
         // AbortSignal 等运行时句柄保持原引用，只复制 maskRequest 改写的内容。
         clone = { ...opts }
@@ -254,6 +270,7 @@ export class RedactionService extends Service {
         replaced = masked.replaced
         blocked = masked.blocked
         hits = masked.hits
+        segments = masked.segments
       } catch (err) {
         self.logger.error('redaction-failed', 'masking engine failed; request rejected (fail-closed)', { error: (err as Error).message })
         throw Object.assign(new Error('redaction: engine failed; request rejected (fail-closed)'), { code: 'REDACTION_FAILED' })
@@ -270,6 +287,7 @@ export class RedactionService extends Service {
           replaced,
           tookMs: Date.now() - started,
           blocked,
+          segments,
           restored: 0,
         })
         recordId = rec.id

@@ -1,6 +1,6 @@
 /**
  * In-memory ring buffer of redaction records. Records carry no plaintext
- * values, EXCEPT each hit's `before`/`after`: ≤200-char snippets of the
+ * values, EXCEPT each hit's `before`/`after`: ≤2000-char snippets of the
  * scanned field around the replacement, kept for the detail view's original
  * vs. masked comparison. They live in this process's memory only (cleared
  * with the buffer or by `clear()`), never persisted to disk, never sent to

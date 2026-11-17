@@ -58,7 +58,8 @@ window.__ModuleLoader__.load({
       stepReplaceSub: 'replaced with placeholders', stepSendSub: '{provider} · {model}',
       reqContent: 'Request content', showChangedOnly: 'only changed parts shown',
       tabOriginal: 'Original', tabMasked: 'What the vendor saw', tabDiff: 'Compare',
-      noChange: 'unchanged sections collapsed', collapsed: 'collapsed',
+      colLocal: 'This machine',
+      noChange: 'sections unchanged', collapsed: 'collapsed',
       howMasked: 'How it was masked', valuesN: '{n} values', replacedN: '{n} replacements',
       lookup: 'Found by', position: 'Position',
       expand: 'Expand', collapse: 'Collapse',
@@ -112,6 +113,7 @@ window.__ModuleLoader__.load({
       stepReplaceSub: '换成占位符', stepSendSub: '{provider} · {model}',
       reqContent: '请求内容', showChangedOnly: '只显示有改动的部分',
       tabOriginal: '原文', tabMasked: '厂商看到的样子', tabDiff: '对照',
+      colLocal: '这台电脑上的',
       noChange: '段没有改动', collapsed: '已折叠',
       howMasked: '怎么遮的', valuesN: '{n} 个值', replacedN: '{n} 处',
       lookup: '查找方式', position: '位置',
@@ -200,11 +202,19 @@ window.__ModuleLoader__.load({
 .dsr-content{padding:0}
 .dsr-content.clamped{max-height:220px;overflow:hidden;position:relative}
 .dsr-content.clamped::after{content:'';position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(transparent,var(--dsw-alias-bg-layer-1));pointer-events:none}
-.dsr-content-row{display:flex;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.dsr-content-row{display:flex;flex-direction:column;border-bottom:1px solid var(--dsw-alias-border-l2)}
 .dsr-content-row:last-child{border-bottom:0}
-.dsr-content-label{width:180px;flex:none;padding:10px 12px;font-size:12px;color:var(--dsw-alias-label-tertiary);border-right:1px solid var(--dsw-alias-border-l2);display:flex;align-items:flex-start;gap:6px}
-.dsr-content-label .role{color:var(--dsw-alias-brand-primary);font-weight:600}
+.dsr-crow-head{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:var(--dsw-alias-label-tertiary);border-bottom:1px solid var(--dsw-alias-border-l2)}
+.dsr-crow-head .role{color:var(--dsw-alias-brand-primary);font-weight:600}
+.dsr-row-path{font-family:var(--dsw-font-mono,ui-monospace,monospace);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dsr-row-vals{margin-left:auto;flex:none}
+.dsr-colheads{display:flex;gap:12px;padding:8px 12px;font-size:12px;color:var(--dsw-alias-label-tertiary);border-bottom:1px solid var(--dsw-alias-border-l2);flex:none}
+.dsr-colheads span{flex:1;min-width:0}
 .dsr-content-main{flex:1;min-width:0;padding:10px 12px;display:flex;gap:12px}
+.dsr-unchanged{margin:10px 12px;border:1px dashed var(--dsw-alias-border-l3);border-radius:10px;overflow:hidden;flex:none}
+.dsr-unchanged-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;font-size:12px;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+.dsr-unchanged-head:hover{background:var(--dsw-alias-bg-layer-2,rgba(128,128,128,.06))}
+.dsr-unchanged-body{padding:2px 12px 10px;font-family:var(--dsw-font-mono,ui-monospace,monospace);font-size:11px;line-height:1.7;color:var(--dsw-alias-label-tertiary);display:flex;flex-direction:column;gap:2px}
 .dsr-content-col{flex:1;min-width:0;font-family:var(--dsw-font-mono,ui-monospace,monospace);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--dsw-alias-label-primary)}
 .dsr-content-col.left{color:var(--dsw-alias-label-secondary)}
 .dsr-content-col.right{color:var(--dsw-alias-label-primary)}
@@ -469,11 +479,15 @@ window.__ModuleLoader__.load({
         rows.push(seenPaths.get(v.path))
       }
 
-      // label by path prefix: system / messages[i].content / tools[i].description
-      const roleOf = (p) => p.startsWith('system') ? 'system'
-        : p.startsWith('tools') ? 'tool'
-        : p === 'preview' ? 'preview'
-        : 'message'
+      // role label：优先用记录里带的消息角色（messages[i].role），无则按路径猜
+      const segByPath = new Map((rec.segments || []).map(s => [s.path, s]))
+      const roleOf = (p) => segByPath.get(p)?.role
+        || (p.startsWith('system') ? 'system' : p.startsWith('tools') ? 'tool' : p === 'preview' ? 'preview' : 'message')
+
+      // 未改动段：记录后新增字段，老记录没 segments 就空卡都不画
+      const [showUnchanged, setShowUnchanged] = useState(false)
+      const unchanged = (rec.segments || []).filter(s => !s.changed)
+      const unchangedBytes = unchanged.reduce((a, s) => a + s.bytes, 0)
 
       // scroll targets reset per record: keep the detail head pinned at top.
       const scrollRefs = useRef({ content: null, side: null })
@@ -563,23 +577,40 @@ window.__ModuleLoader__.load({
                     h('button', { key: k, type: 'button', className: contentTab === k ? 'on' : '', onClick: () => setContentTab(k) }, label))),
               ]),
               h('div', { key: 'content', ref: (el) => { scrollRefs.current.content = el }, className: 'dsr-content' + (expanded ? '' : ' clamped') },
-                rows.length === 0
+                rows.length === 0 && unchanged.length === 0
                   ? h('div', { className: 'dsr-empty', style: { padding: 16 } }, t('empty'))
-                  : rows.map(r =>
-                    h('div', { key: r.path, className: 'dsr-content-row' }, [
-                      h('div', { key: 'label', className: 'dsr-content-label' }, [
-                        h('span', { key: 'role', className: 'role' }, roleOf(r.path)),
-                        h('span', { key: 'path' }, r.path),
-                        r.count > 1 ? h('span', { key: 'n', className: 'dsr-count' }, '×' + r.count) : null,
+                  : [
+                    // 双栏列头：本机原文 / 厂商看到的
+                    contentTab === 'diff' && rows.length > 0 ? h('div', { key: 'colheads', className: 'dsr-colheads' }, [
+                      h('span', { key: 'l' }, t('colLocal')),
+                      h('span', { key: 'r' }, t('tabMasked')),
+                    ]) : null,
+                    // 未改动段折叠卡
+                    unchanged.length > 0 ? h('div', { key: 'un', className: 'dsr-unchanged' }, [
+                      h('div', { key: 'h', className: 'dsr-unchanged-head', onClick: () => setShowUnchanged(v => !v) }, [
+                        h('span', { key: 't' }, (showUnchanged ? '⌄ ' : '› ') + unchanged.length + ' ' + t('noChange')),
+                        h('span', { key: 'b' }, fmtBytes(unchangedBytes)),
                       ]),
-                      h('div', { key: 'main', className: 'dsr-content-main' },
-                        contentTab === 'original' ? h('div', { className: 'dsr-content-col left' }, r.before) :
-                        contentTab === 'masked' ? h('div', { className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs, onPh: showPop })) :
-                        [
-                          h('div', { key: 'l', className: 'dsr-content-col left' }, r.before),
-                          h('div', { key: 'r', className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs, onPh: showPop })),
+                      showUnchanged ? h('div', { key: 'b', className: 'dsr-unchanged-body' },
+                        unchanged.map(s => h('div', { key: s.path }, (s.role ? s.role + ' ' : '') + s.path))) : null,
+                    ]) : null,
+                    // 改动字段卡
+                    ...rows.map(r =>
+                      h('div', { key: r.path, className: 'dsr-content-row' }, [
+                        h('div', { key: 'hd', className: 'dsr-crow-head' }, [
+                          h('span', { key: 'role', className: 'role' }, roleOf(r.path)),
+                          h('span', { key: 'path', className: 'dsr-row-path' }, r.path),
+                          h('span', { key: 'vals', className: 'dsr-row-vals' }, t('valuesN', { n: r.count })),
                         ]),
-                    ]))),
+                        h('div', { key: 'main', className: 'dsr-content-main' },
+                          contentTab === 'original' ? h('div', { className: 'dsr-content-col left' }, r.before) :
+                          contentTab === 'masked' ? h('div', { className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs, onPh: showPop })) :
+                          [
+                            h('div', { key: 'l', className: 'dsr-content-col left' }, r.before),
+                            h('div', { key: 'r', className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs, onPh: showPop })),
+                          ]),
+                      ])),
+                  ]),
               rows.length > 0 ? h('div', { key: 'exp', className: 'dsr-expandbar' },
                 h('button', { type: 'button', className: 'dsr-expand', onClick: () => setExpanded(v => !v) },
                   expanded ? t('collapse') : t('expand'))) : null,

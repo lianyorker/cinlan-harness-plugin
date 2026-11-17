@@ -20,7 +20,7 @@ export interface Hit {
 }
 
 /** One per-request redaction record. No plaintext values; hit entries carry
- *  only ≤200-char before/after field snippets for the detail view (in-memory
+ *  only ≤2000-char before/after field snippets for the detail view (in-memory
  *  only — see records.ts). */
 export interface RedactionRecord {
   id: number
@@ -33,8 +33,17 @@ export interface RedactionRecord {
   replaced: number
   tookMs: number
   blocked: boolean
+  segments?: RedactionSegment[]
   restored: number
   time: string
+}
+
+/** Detail view 的字段段清单：只记 path/bytes/changed/role，不落文本。 */
+export interface RedactionSegment {
+  path: string
+  bytes: number
+  changed: boolean
+  role?: string
 }
 
 export interface RedactionRecordValue {
@@ -47,9 +56,9 @@ export interface RedactionRecordValue {
   action: Hit['action']
   path: string
   restored: number
-  /** original text (first 200 chars) for the detail view */
+  /** original text (first 2000 chars) for the detail view */
   before?: string
-  /** masked text (first 200 chars) for the detail view */
+  /** masked text (first 2000 chars) for the detail view */
   after?: string
 }
 
