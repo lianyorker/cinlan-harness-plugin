@@ -51,9 +51,7 @@ export class knowledgeSyncService extends Service {
             return next();
         });
     }
-    /** 热更新语义（规范对齐）：按配置 diff 分域增量重建——
-     *  只改 hub 连接才换 client；只改本地目录才换 local/store；
-     *  只改间隔/开关仅调整定时器；都不变则零重建。连接与同步状态全程保留。 */
+    /** 停旧运行时并按新配置重建 client/local/engine；已初始化时恢复同步循环。 */
     applyUpdate(raw) {
         let next;
         try {
@@ -63,48 +61,17 @@ export class knowledgeSyncService extends Service {
             this.logger.warn('config-update-rejected', `volatile 配置更新无效，保留当前运行时: ${err.message}`);
             return;
         }
-        const prev = this.resolved;
-        const diff = diffResolvedConfig(prev, next);
-        if (!diff.length) {
-            this.logger.info('config-unchanged', '配置无实质变化，跳过重建');
+        const wasRunning = this.initialized;
+        this.stopRuntime();
+        this.configure(next, 'config-reloaded');
+        if (!wasRunning)
             return;
-        }
-        this.logger.info('config-updating', '配置变更（增量重建）', { domains: diff });
-        // 需要换 client：hub 连接参数变化
-        if (diff.includes('client')) {
-            this.client = new HubClient(next.profile, this.logger);
-        }
-        // 需要换 local：本地目录/scope 变化（同步状态目录随 memoryDir 走，必须重载）
-        if (diff.includes('local')) {
-            this.local = new LocalStore(next, this.logger);
-            this.engine = new SyncEngine(next, this.client, this.local, this.logger);
-            void this.engine.loadState().then(() => {
-                if (this.initialized && this.resolved.auto)
-                    this.engine.startAuto();
-            }).catch((err) => this.logger.error('state-load-failed', '状态恢复失败', { error: err.message }));
-        }
-        // 定时器参数变化：仅重启 auto 循环，连接保留
-        if (diff.includes('timer') && !diff.includes('local')) {
-            this.engine.stopAuto();
-            if (this.initialized && next.auto)
+        void this.engine.loadState().then(() => {
+            if (this.resolved.syncOnStart)
+                void this.engine.runCycle().catch(() => { });
+            if (this.resolved.auto)
                 this.engine.startAuto();
-        }
-        // 日志级别变化：只换 logger
-        if (diff.includes('logger')) {
-            this.logger = createLogger({
-                component: `clh-knowledge-sync:${next.nodeId}`,
-                level: next.logLevel,
-                filePath: logFilePathFor(next.logDir, 'sync'),
-            });
-            this.engine && (this.engine.logger = this.logger);
-            this.client && (this.client.logger = this.logger);
-        }
-        this.resolved = next;
-        this.logger.info('config-reloaded', '配置已热更新', {
-            domains: diff,
-            hub: next.profile.protocol + '://' + next.profile.host + ':' + next.profile.port,
-            memoryDir: next.memoryDir,
-        });
+        }).catch((err) => this.logger.error('state-load-failed', '状态恢复失败', { error: err.message }));
     }
     /** 按已解析配置重建运行时对象（logger/client/local/engine）。 */
     configure(next, event) {

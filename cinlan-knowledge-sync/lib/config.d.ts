@@ -81,11 +81,6 @@ export interface ResolvedNodeConfig {
         resultFile: string;
     };
 }
-/**
- * 归并插件原始配置为运行时配置。
- * schema 已保证必填项存在；这里负责解析激活 profile、补默认端口、路径绝对化，
- * 并在引用不存在的 profile 或 token 为空时给出能直接定位问题的错误。
- */
 export declare function resolveNodeConfig(input: NodeSyncConfig, cwd?: string): ResolvedNodeConfig;
 export interface HubListenConfig {
     protocol: 'http' | 'https';
@@ -127,4 +122,6 @@ export declare function loadHubConfig(file: string, overrides?: {
 export declare function validateHubConfig(raw: Record<string, unknown>, sourceFile: string, overrides?: {
     port?: number;
 }): HubConfig;
+/** 比较两份已解析配置，返回发生变化的域：client / local / timer / logger（空数组=无实质变化）。 */
+export declare function diffResolvedConfig(prev: any, next: any): string[];
 export {};
