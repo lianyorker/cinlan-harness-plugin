@@ -1,0 +1,23 @@
+{
+  "action": "embedding/pending",
+  "request": {
+    "team_id": "team_222222222222222222222222"
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_333333333333333333333333",
+    "data": {
+      "items": [
+        {
+          "asset_id": "ast_444444444444444444444444",
+          "version": 1,
+          "title": "回填差集里的资产",
+          "type": "memory",
+          "visibility": "private",
+          "updated_at": "2026-01-01T00:00:00.000Z"
+        }
+      ]
+    }
+  }
+}

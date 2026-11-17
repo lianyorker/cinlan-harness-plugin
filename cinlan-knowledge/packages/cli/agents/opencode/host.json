@@ -1,0 +1,25 @@
+{
+  "name": "opencode",
+  "title": "OpenCode",
+  "mcp": {
+    "file": "~/.config/opencode/opencode.json",
+    "format": "json",
+    "key": "mcp.ck",
+    "insert": false,
+    "argv": true,
+    "remote_type": "remote"
+  },
+  "hook": null,
+  "instructions": "brief",
+  "budgets": {
+    "tool": { "budget_chars": 12000 }
+  },
+  "skill_dir": "~/.config/opencode/skills",
+  "rules_file": "~/.config/opencode/AGENTS.md",
+  "import_scan": [
+    "~/.config/opencode/skills",
+    "~/.agents/skills",
+    "<workspace>/.opencode/skills",
+    "<workspace>/.agents/skills"
+  ]
+}

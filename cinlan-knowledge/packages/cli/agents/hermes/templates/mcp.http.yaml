@@ -1,0 +1,9 @@
+# config.yaml 片段（--transport http）：并入顶层 mcp_servers: 段
+# usage: ck setup --host hermes --agent <team>/<name> --transport http [--write]
+mcp_servers:
+  ck:
+    url: '{{HUB_URL}}/mcp'
+    headers:
+      x-ck-agent: '{{AGENT}}'
+      x-ck-host: 'hermes'
+      x-ck-baseline: 'brief'

@@ -1,0 +1,21 @@
+{
+  "action": "asset/rollback",
+  "request": {
+    "asset_id": "ast_444444444444444444444444",
+    "version": 1
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_333333333333333333333333",
+    "data": {
+      "status": "applied",
+      "asset": {
+        "id": "ast_444444444444444444444444",
+        "version": 3,
+        "visibility": "private",
+        "status": "active"
+      }
+    }
+  }
+}

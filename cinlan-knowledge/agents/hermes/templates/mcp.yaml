@@ -1,0 +1,6 @@
+# config.yaml 片段：并入顶层 mcp_servers: 段（ck setup 用结构化合并写入，不整段追加）
+# usage: ck setup --host hermes --agent <team>/<name> [--write]
+mcp_servers:
+  ck:
+    command: node
+    args: ['{{CK_ENTRY}}', 'mcp', '--host', 'hermes', '--agent', '{{AGENT}}']

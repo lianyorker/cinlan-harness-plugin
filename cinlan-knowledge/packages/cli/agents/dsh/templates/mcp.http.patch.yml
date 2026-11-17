@@ -1,0 +1,15 @@
+# dsh MCP 条目模板（Streamable HTTP，远端 hub）
+# 落点同 mcp.patch.yml。key 不进宿主配置；远端把 key 换成宿主侧的鉴权头或网关注入。
+# 占位符：{{HUB_URL}} = hub 根地址（不含 /mcp）；{{AGENT}} = <team>/<name>
+
+- insert:
+    - id: cinlan-knowledge
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: ck
+        transport: streamable-http
+        url: '{{HUB_URL}}/mcp'
+        headers:
+          x-ck-agent: '{{AGENT}}'
+          x-ck-host: 'dsh'
+          x-ck-baseline: 'full'

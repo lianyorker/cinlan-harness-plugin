@@ -1,0 +1,33 @@
+{
+  "name": "@cinlan/knowledge-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "cinlan-knowledge 控制台：React SPA，构建产物由 hub 托管在 /panel/",
+  "scripts": {
+    "hosts": "node scripts/build-hosts.mjs",
+    "dev": "node scripts/build-hosts.mjs && vite",
+    "build": "node scripts/build-hosts.mjs && tsc -p tsconfig.json && vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.test.json && node --test \".test-out/test/*.test.js\""
+  },
+  "dependencies": {
+    "@cinlan/knowledge-sdk": "workspace:*",
+    "diff": "^9.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tdesign-icons-react": "^0.6.12",
+    "tdesign-react": "^1.18.6"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "license": "MIT"
+}

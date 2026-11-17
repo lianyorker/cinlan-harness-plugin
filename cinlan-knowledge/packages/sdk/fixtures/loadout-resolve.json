@@ -1,0 +1,57 @@
+{
+  "action": "loadout/resolve",
+  "request": {
+    "agent_id": "agt_333333333333333333333333",
+    "if_digest": "9f2c",
+    "budget_chars": 12000,
+    "max_bytes": 24000,
+    "max_items": 30
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_444444444444444444444444",
+    "data": {
+      "not_modified": false,
+      "digest": "9f2c6b1e0d5a4c3b2a190807f6e5d4c3b2a190807f6e5d4c3b2a190807f6e5d4",
+      "chars": 8421,
+      "bytes": 19764,
+      "text": "<cinlan_knowledge>…</cinlan_knowledge>",
+      "items": [
+        {
+          "asset_id": "ast_444444444444444444444444",
+          "type": "memory",
+          "title": "发版检查清单",
+          "version": 3,
+          "mode": "inject",
+          "chars": 812,
+          "downgraded": false
+        }
+      ],
+      "skills": [
+        {
+          "asset_id": "ast_555555555555555555555555",
+          "name": "deploy-release",
+          "version": 2,
+          "content_hash": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+        }
+      ],
+      "skipped": [
+        {
+          "asset_id": "ast_666666666666666666666666",
+          "reason": "no_access"
+        },
+        {
+          "asset_id": "ast_777777777777777777777777",
+          "reason": "budget"
+        },
+        {
+          "asset_id": "ast_888888888888888888888888",
+          "reason": "name_conflict"
+        }
+      ],
+      "downgraded": 1,
+      "generated_at": "2026-11-12T03:00:00.000Z"
+    }
+  }
+}

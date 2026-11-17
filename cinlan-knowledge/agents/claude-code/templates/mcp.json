@@ -1,0 +1,11 @@
+{
+  "_comment": [
+    "claude-code MCP 条目模板（stdio，A1）。落点：~/.claude.json 的 mcpServers.ck（用户级）。",
+    "占位符：{{CK_ENTRY}} = ck 入口绝对路径（lib/bin.js）；{{AGENT}} = <team>/<name>。",
+    "brief baseline 不追加 --baseline full；工具名前缀 mcp__ck__<tool>。"
+  ],
+  "mcpServers.ck": {
+    "command": "node",
+    "args": ["{{CK_ENTRY}}", "mcp", "--host", "claude-code", "--agent", "{{AGENT}}"]
+  }
+}

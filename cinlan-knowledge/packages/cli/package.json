@@ -1,0 +1,38 @@
+{
+  "name": "@cinlan/knowledge-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "cinlan-knowledge 客户端：ck",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "ck": "./lib/bin.js"
+  },
+  "files": [
+    "lib/",
+    "agents/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node --input-type=module -e \"import{rmSync,cpSync}from'node:fs';rmSync('agents',{recursive:true,force:true});cpSync('../../agents','agents',{recursive:true})\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test \".test-out/test/*.test.js\""
+  },
+  "dependencies": {
+    "@cinlan/knowledge-sdk": "workspace:*",
+    "@cinlan/knowledge-mcp": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

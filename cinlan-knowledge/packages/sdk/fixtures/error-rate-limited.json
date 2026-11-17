@@ -1,0 +1,13 @@
+{
+  "action": "auth/verify",
+  "request": {},
+  "response": {
+    "code": 429,
+    "message": "RATE_LIMITED",
+    "request_id": "req_777777777777777777777777",
+    "data": {
+      "detail": "rate limit exceeded",
+      "retry_after": 60
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "claude-code MCP 条目模板（Streamable HTTP，远端 hub）。落点同 mcp.json。",
+    "占位符：{{HUB_URL}} = hub 根地址（不含 /mcp）；{{AGENT}} = <team>/<name>。",
+    "key 不进宿主配置。"
+  ],
+  "mcpServers.ck": {
+    "type": "http",
+    "url": "{{HUB_URL}}/mcp",
+    "headers": {
+      "x-ck-agent": "{{AGENT}}",
+      "x-ck-host": "claude-code",
+      "x-ck-baseline": "brief"
+    }
+  }
+}

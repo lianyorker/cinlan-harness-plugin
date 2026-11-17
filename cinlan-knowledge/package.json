@@ -1,0 +1,18 @@
+{
+  "name": "cinlan-knowledge-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "pack:ck": "pnpm -r build && node scripts/pack-ck.mjs",
+    "e2e": "node scripts/e2e-loadout.mjs",
+    "e2e:panel": "node scripts/e2e-panel.mjs",
+    "e2e:gate": "node scripts/e2e-gate.mjs"
+  }
+}

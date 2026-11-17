@@ -1,0 +1,13 @@
+{
+  "_comment": [
+    "gemini-cli stdio MCP 条目模板。落点：~/.gemini/settings.json 的 mcpServers.ck。",
+    "工具前缀：mcp_<server>_<tool>，即 mcp_ck_knowledge_status 等 5 个。",
+    "trust: true → 工作区已信任时免逐次 MCP 调用确认；未信任的工作区仍逐次问。",
+    "占位符：{{CK_ENTRY}} = ck 入口绝对路径（lib/bin.js）；{{AGENT}} = <team>/<name>。"
+  ],
+  "mcpServers.ck": {
+    "command": "node",
+    "args": ["{{CK_ENTRY}}", "mcp", "--host", "gemini-cli", "--agent", "{{AGENT}}"],
+    "trust": true
+  }
+}

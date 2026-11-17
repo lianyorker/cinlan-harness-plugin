@@ -1,0 +1,17 @@
+{
+  "action": "inbox/adopt",
+  "request": {
+    "asset_id": "ast_555555555555555555555555"
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_333333333333333333333333",
+    "data": {
+      "asset_id": "ast_555555555555555555555555",
+      "status": "active",
+      "visibility": "private",
+      "review_id": null
+    }
+  }
+}

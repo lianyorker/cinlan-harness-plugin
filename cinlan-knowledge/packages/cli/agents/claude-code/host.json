@@ -1,0 +1,28 @@
+{
+  "name": "claude-code",
+  "title": "Claude Code",
+  "mcp": {
+    "file": "~/.claude.json",
+    "format": "json",
+    "key": "mcpServers.ck",
+    "insert": false
+  },
+  "hook": {
+    "file": "~/.claude/settings.json",
+    "format": "json",
+    "key": "hooks.SessionStart",
+    "matcher": "startup|clear|compact",
+    "output": "claude-code"
+  },
+  "instructions": "brief",
+  "budgets": {
+    "hook": { "budget_chars": 8000 },
+    "tool": { "budget_chars": 12000 }
+  },
+  "skill_dir": "~/.claude/skills",
+  "rules_file": "~/.claude/CLAUDE.md",
+  "import_scan": [
+    "~/.claude/skills",
+    "<workspace>/.claude/skills"
+  ]
+}

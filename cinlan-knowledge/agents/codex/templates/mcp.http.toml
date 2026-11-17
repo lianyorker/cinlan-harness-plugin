@@ -1,0 +1,9 @@
+# >>> cinlan-knowledge (managed by ck setup; delete this block to detach)
+# codex MCP 条目模板（远端 hub）。落点同 mcp.toml：~/.codex/config.toml 追加此段。
+# 占位符：{{HUB_URL}} = hub 根地址（不含 /mcp）；{{AGENT}} = <team>/<name>。
+# key 不落盘：bearer_token_env_var 指向环境变量，shell 里 CK_USER_KEY=<key>（与 ck 读的变量同名）。
+[mcp_servers.ck]
+url = '{{HUB_URL}}/mcp'
+bearer_token_env_var = "CK_USER_KEY"
+http_headers = { "x-ck-agent" = '{{AGENT}}', "x-ck-host" = 'codex', "x-ck-baseline" = 'brief' }
+# <<< cinlan-knowledge

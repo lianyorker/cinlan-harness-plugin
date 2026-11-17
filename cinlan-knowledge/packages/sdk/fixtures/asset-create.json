@@ -1,0 +1,26 @@
+{
+  "action": "asset/create",
+  "request": {
+    "team_id": "team_222222222222222222222222",
+    "type": "memory",
+    "title": "发版检查清单",
+    "content": "发布前先跑 e2e …",
+    "summary": "",
+    "tags": ["release"],
+    "layer": "atom"
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_333333333333333333333333",
+    "data": {
+      "asset": {
+        "id": "ast_444444444444444444444444",
+        "version": 1,
+        "visibility": "private",
+        "status": "active",
+        "content_hash": "9f2c6b1e0d5a4c3b2a190807f6e5d4c3b2a190807f6e5d4c3b2a190807f6e5d4"
+      }
+    }
+  }
+}

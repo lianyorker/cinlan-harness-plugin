@@ -1,0 +1,15 @@
+# cinlan-harness MCP 条目模板（stdio，A1）
+# 落点：$CLH_HOME/cordis.patch.yml（默认 ~/.clh/cordis.patch.yml，对所有 profile 生效）
+#       或 $CLH_HOME/profiles/<profile>/cordis.patch.yml（只对一个 profile 生效）
+# CLH 与官方 DSH 是两个产品：CLH 只读 $CLH_HOME，其次 $CINLAN_HARNESS_HOME，最后 ~/.clh；
+# 不读 $DSH_HOME，也不要写 ~/.dsh。
+# 占位符：{{CK_ENTRY}} = ck 入口绝对路径（lib/bin.js）；{{AGENT}} = <team>/<name>
+
+- insert:
+    - id: cinlan-knowledge
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: ck
+        transport: stdio
+        command: node
+        args: ['{{CK_ENTRY}}', 'mcp', '--host', 'cinlan-harness', '--agent', '{{AGENT}}', '--baseline', 'full']

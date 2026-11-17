@@ -1,0 +1,29 @@
+{
+  "action": "agent/ensure",
+  "request": {
+    "team": "cinlan",
+    "name": "cc-ly",
+    "host": "claude-code"
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_222222222222222222222222",
+    "data": {
+      "agent": {
+        "id": "agt_333333333333333333333333",
+        "team_id": "team_222222222222222222222222",
+        "owner_user_id": "usr_111111111111111111111111",
+        "name": "cc-ly",
+        "host": "claude-code",
+        "description": "",
+        "is_template": false,
+        "status": "active",
+        "last_seen_at": "2026-11-12T03:00:00.000Z",
+        "created_at": "2026-11-12T03:00:00.000Z"
+      },
+      "created": true,
+      "template_applied": 4
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "action": "asset/update",
+  "request": {
+    "asset_id": "ast_444444444444444444444444",
+    "base_version": 2,
+    "content": "…",
+    "change_note": "补回滚步骤"
+  },
+  "response": {
+    "code": 409,
+    "message": "VERSION_CONFLICT",
+    "request_id": "req_666666666666666666666666",
+    "data": {
+      "detail": "base_version is not current",
+      "current_version": 4
+    }
+  }
+}

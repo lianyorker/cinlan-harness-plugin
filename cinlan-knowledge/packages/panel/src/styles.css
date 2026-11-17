@@ -1,0 +1,995 @@
+/* Cinlan Knowledge panel：面板自身的布局与少量语义类。
+   设计语言继承 TDesign 默认 token（panel-design.md §6），视觉收敛为 Clean Product：
+   - chrome（顶栏 / 侧栏）与页面底色同层，内容白卡只属于主区——层级靠明度差，不靠边框硬切；
+   - 卡片统一一层：白底 + 极淡边框，无阴影；浮层（登录卡 / 抽屉 / 弹窗）才允许影；
+   - 字号 12/13/14/20，间距 4pt 网格，容器圆角 8、控件对齐 TDesign 的 3。 */
+
+:root {
+  /* 页面底色显式写死：冷调浅灰。不依赖 --td-bg-color-page 的解析值（1.18.6 里是 #eee，太深显脏）。 */
+  --ck-bg: #f5f6f8;
+  --ck-surface: #ffffff;
+  --ck-border: #e8e9ec;
+  --ck-text: var(--td-text-color-primary, rgba(0, 0, 0, 0.9));
+  --ck-text-2: var(--td-text-color-secondary, rgba(0, 0, 0, 0.6));
+  --ck-radius: 8px;
+  --ck-radius-sm: 3px;
+  --ck-gap: 16px;
+  --ck-header: 56px;
+  --ck-shadow: none;
+  --ck-shadow-float: var(--td-shadow-2, 0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ck-bg);
+  color: var(--ck-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+code,
+pre {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+}
+
+a {
+  color: var(--td-brand-color, #0052d9);
+}
+
+/* ---------- 壳层：chrome 与页面底同色，白卡只属于内容 ---------- */
+
+.ck-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ck-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--ck-gap);
+  height: var(--ck-header);
+  padding: 0 16px;
+  background: var(--ck-bg);
+  border-bottom: 1px solid var(--ck-border);
+  flex: 0 0 auto;
+}
+
+.ck-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ck-brand .t-icon {
+  color: var(--td-brand-color, #0052d9);
+}
+
+.ck-topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ck-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.ck-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ck-sider {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  background: var(--ck-bg);
+  border-right: 1px solid var(--ck-border);
+  flex: 0 0 auto;
+  /* border-box 下内容区比 width 少 1px 边框，overflow-x 一旦是 auto 就会出横滚条；侧栏自身不需要横向滚动。 */
+  overflow: hidden auto;
+  transition: width 0.2s ease;
+}
+
+/* 侧栏整面灰底：菜单项 hover 淡色、选中淡蓝块；切法在侧栏内，不再「半白半灰」。 */
+.ck-sider .t-default-menu {
+  /* Menu 组件按 width prop 写内联宽度，会比 border-box 后的侧栏内容区宽 1px（横滚条来源）；强制跟随侧栏。 */
+  width: 100% !important;
+  /* theme="light" 给包装层写死白底，在灰侧栏上形成「半截白带」；透到侧栏底色。 */
+  background: transparent;
+}
+
+.ck-sider .t-menu {
+  background: transparent;
+  width: 100%;
+}
+
+/* 选择器提到 .t-default-menu 一层（0,4,0），压过 TDesign 收起态的同权重 active/hover 规则。 */
+.ck-sider .t-default-menu .t-menu__item {
+  border-radius: 6px;
+  margin: 0 8px;
+  height: 36px;
+  line-height: 36px;
+}
+
+.ck-sider .t-default-menu .t-menu__item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.ck-sider .t-default-menu .t-menu__item.t-is-active {
+  background: rgba(0, 82, 217, 0.08);
+  color: var(--td-brand-color, #0052d9);
+  font-weight: 500;
+}
+
+.ck-sider-collapsed {
+  width: 56px;
+}
+
+.ck-sider-head {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 8px 0;
+  flex: 0 0 auto;
+}
+
+.ck-sider-collapsed .ck-sider-head {
+  justify-content: center;
+  padding: 8px 0 0;
+}
+
+/* 侧边导航布局（P5，参考腾讯 Memory Hub）：侧栏顶部团队切换 */
+.ck-team-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 8px;
+  flex: 0 0 auto;
+}
+
+.ck-team-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--td-brand-color, #0052d9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.ck-team-badge-letter {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* 团队标识（单团队时）：名称 + slug，不可切换 */
+.ck-team-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.ck-team-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ck-text);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ck-team-slug {
+  font-size: 11px;
+  color: var(--ck-text-2);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 平铺式侧边导航：组间用间距分隔（不嵌套标题） */
+.ck-menu-divider {
+  margin-top: 16px !important;
+  position: relative;
+}
+
+.ck-menu-divider::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: var(--ck-border);
+}
+
+/* 侧栏底部：管理员标签 */
+.ck-sider-foot {
+  padding: 8px 12px;
+  margin-top: auto;
+  flex: 0 0 auto;
+}
+
+.ck-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  /* 内容比容器宽时（宽表格 + padding）由内容自己滚，页面不出横滚条。 */
+  overflow-x: hidden;
+}
+
+/* 设计稿：内容区窄版单列，最大宽 1200–1440（panel-design.md §4）。 */
+.ck-main-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ---------- 登录 ---------- */
+
+.ck-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+}
+
+.ck-login-card {
+  width: 380px;
+  padding: 32px;
+  background: var(--ck-surface);
+  border-radius: var(--ck-radius);
+  border: 1px solid var(--ck-border);
+  box-shadow: var(--ck-shadow-float);
+}
+
+/* 品牌锚点：整块面板唯一允许的「大胆」位置（登录页）；其余界面保持安静。 */
+.ck-login-logo {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--td-brand-color, #0052d9);
+  color: #fff;
+}
+
+.ck-login-title {
+  margin: 0 0 4px;
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ck-login-sub {
+  margin: 0 0 24px;
+  color: var(--ck-text-2);
+  text-align: center;
+}
+
+.ck-login-error {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  color: var(--td-error-color, #d54941);
+  background: var(--td-error-color-1, #fdeceb);
+  border-radius: var(--ck-radius-sm);
+  font-size: 13px;
+}
+
+.ck-login-foot {
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: var(--ck-text-2);
+}
+
+/* ---------- 字段 ---------- */
+
+.ck-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.ck-field-label {
+  font-size: 12px;
+  color: var(--ck-text-2);
+}
+
+.ck-field-hint {
+  font-size: 12px;
+  color: var(--ck-text-2);
+}
+
+.ck-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ck-text-2);
+  cursor: pointer;
+}
+
+.ck-input {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--td-component-border, #dcdcdc);
+  border-radius: var(--ck-radius-sm);
+  font-size: 14px;
+  outline: none;
+}
+
+.ck-input:focus-visible {
+  outline: 2px solid var(--td-brand-color, #0052d9);
+  outline-offset: 1px;
+}
+
+.ck-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0 16px;
+  align-items: end;
+}
+
+/* ---------- 页头与筛选 ---------- */
+
+.ck-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ck-gap);
+  margin-bottom: 20px;
+}
+
+.ck-page-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.ck-page-desc {
+  margin: 4px 0 0;
+  color: var(--ck-text-2);
+  font-size: 13px;
+  max-width: 72ch;
+}
+
+.ck-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* 筛选条卡片化：与下方表格卡形成上下两块，不再裸贴在灰底上。 */
+.ck-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-bottom: var(--ck-gap);
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius);
+  box-shadow: var(--ck-shadow);
+}
+
+/* ---------- 表格统一层 ---------- */
+
+/*
+  页内表格全部进白卡（.ck-panel 或 .ck-main 下裸放的 TDesign Table）。
+  表格自己的边框去掉，白卡的外框就是容器；hover 淡灰，选中由 Tag 表达。
+  抽屉 / 弹窗里的表不受影响（不加 .ck-panel 即裸放）。
+*/
+.ck-panel .t-table,
+.ck-main .t-table {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.ck-panel .t-table .t-table__header th,
+.ck-main .t-table .t-table__header th {
+  background: transparent;
+  border-bottom: 1px solid var(--ck-border);
+  padding: 10px 12px;
+  font-weight: 500;
+  color: var(--ck-text-2);
+}
+
+.ck-panel .t-table .t-table__body td,
+.ck-main .t-table .t-table__body td {
+  border-bottom: 1px solid var(--ck-border);
+  padding: 12px;
+  vertical-align: middle;
+}
+
+.ck-panel .t-table .t-table__row--hover:hover td,
+.ck-main .t-table .t-table__row--hover:hover td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* ---------- 状态 ---------- */
+
+.ck-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0;
+  color: var(--ck-text-2);
+}
+
+/* 空态：无盒纯排版——灰底上居中灰字，不加虚线框（虚线盒是最重的模板感来源）。 */
+.ck-empty {
+  padding: 56px 16px;
+  text-align: center;
+}
+
+.ck-empty-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.ck-empty-hint {
+  margin: 0;
+  color: var(--ck-text-2);
+  font-size: 13px;
+}
+
+.ck-empty-action {
+  margin-top: 16px;
+}
+
+/* 错误块：白底 + 左侧红色强调条，不再整幅铺粉。 */
+.ck-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-bottom: var(--ck-gap);
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-left: 3px solid var(--td-error-color, #d54941);
+  border-radius: var(--ck-radius);
+  box-shadow: var(--ck-shadow);
+}
+
+.ck-error-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ck-error-detail {
+  margin: 0;
+  font-size: 13px;
+}
+
+.ck-error-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ck-text-2);
+}
+
+.ck-error-strong {
+  color: var(--td-error-color, #d54941);
+  font-size: 13px;
+}
+
+/* ---------- 通用排版 ---------- */
+
+.ck-muted {
+  color: var(--ck-text-2);
+}
+
+.ck-small {
+  font-size: 12px;
+}
+
+.ck-subtitle {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ck-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ck-border);
+}
+
+.ck-section-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ck-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.ck-loadmore {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+/* 白卡内的加载更多：卡自带 16px 内边距，这里收紧一档。 */
+.ck-panel .ck-loadmore {
+  padding: 8px 0 0;
+}
+
+/* Tab 与容器圆角分离：Tab 自身不要圆角（TDesign 默认给了），圆角只属于外层 ck-panel。
+ * Tab 是内容区的内嵌指示器，不该有自己的圆角框。 */
+.ck-panel .t-tabs .t-tabs__nav-item {
+  border-radius: 0 !important;
+}
+
+.ck-panel .t-tabs .t-tabs__nav {
+  /* Tab 导航条不要独立的背景/圆角——融进容器底色 */
+  background: transparent;
+}
+
+/* 收件箱徽标（P5）：顶栏邮件图标上的草稿计数 */
+.ck-inbox-badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--td-error-color, #d54941);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ---------- 内容 ---------- */
+
+.ck-content {
+  margin: 12px 0;
+  padding: 16px;
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #fafafa;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ck-code {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  white-space: pre;
+  background: #f7f7f7;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  line-height: 1.55;
+}
+
+.ck-code-key {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 13px;
+}
+
+.ck-code-detail {
+  max-width: 420px;
+  max-height: 320px;
+  overflow: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.ck-code-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.ck-code-row .ck-code {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ck-comment {
+  margin: 0 0 8px;
+  padding: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ck-text-2);
+  font-family: inherit;
+}
+
+.ck-note {
+  margin: 0 0 12px;
+  color: var(--ck-text-2);
+}
+
+.ck-kv {
+  display: flex;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.ck-kv-label {
+  flex: 0 0 96px;
+  color: var(--ck-text-2);
+}
+
+.ck-kv-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-all;
+}
+
+/* ---------- 详情布局 ---------- */
+
+.ck-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--ck-gap);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .ck-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ck-panel {
+  padding: 16px;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius);
+  margin-bottom: var(--ck-gap);
+  box-shadow: var(--ck-shadow);
+  /* 圆角卡：末行 hover 底色不戳出圆角；TDesign 弹层默认挂 body，不受影响。 */
+  overflow: hidden;
+}
+
+.ck-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ck-panel-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ck-panel-head .ck-panel-title {
+  margin: 0;
+}
+
+.ck-drawer-body {
+  padding-bottom: 24px;
+}
+
+/* ---------- 配装表 ---------- */
+
+.ck-loadout {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ck-loadout th {
+  text-align: left;
+  padding: 8px;
+  font-weight: 500;
+  color: var(--ck-text-2);
+  border-bottom: 1px solid var(--ck-border);
+}
+
+.ck-loadout td {
+  padding: 8px;
+  border-bottom: 1px solid var(--ck-border);
+  vertical-align: middle;
+}
+
+.ck-order {
+  display: flex;
+  flex-direction: column;
+}
+
+.ck-loadout-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.ck-skipped {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13px;
+}
+
+.ck-skipped li {
+  margin: 4px 0;
+}
+
+/* ---------- KPI ---------- */
+
+.ck-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--ck-gap);
+  margin-bottom: var(--ck-gap);
+}
+
+.ck-kpis-compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.ck-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius);
+  box-shadow: var(--ck-shadow);
+}
+
+.ck-kpis-compact .ck-kpi {
+  padding: 8px 12px;
+}
+
+.ck-kpi-label {
+  font-size: 12px;
+  color: var(--ck-text-2);
+}
+
+.ck-kpi strong {
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.ck-kpis-compact .ck-kpi strong {
+  font-size: 16px;
+}
+
+/* ---------- 差异 ---------- */
+
+.ck-diff {
+  margin: 8px 0;
+  max-height: 480px;
+  overflow: auto;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ck-diff-row {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ck-diff-add {
+  background: var(--td-success-color-1, #e8f8ee);
+}
+
+.ck-diff-del {
+  background: var(--td-error-color-1, #fdeceb);
+}
+
+.ck-diff-no {
+  flex: 0 0 36px;
+  text-align: right;
+  color: var(--ck-text-2);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.ck-diff-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---------- 接入指南 ---------- */
+
+.ck-guide {
+  max-width: 960px;
+}
+
+.ck-guide-block {
+  padding: 24px;
+  margin-bottom: var(--ck-gap);
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius);
+  box-shadow: var(--ck-shadow);
+}
+
+.ck-guide-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ck-guide-group {
+  margin-top: 16px;
+}
+
+.ck-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ck-step {
+  display: flex;
+  gap: 12px;
+}
+
+.ck-step-no {
+  flex: 0 0 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--td-brand-color, #0052d9);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ck-step-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ck-step-body p {
+  margin: 4px 0;
+}
+
+.ck-host-card {
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  margin-bottom: 8px;
+}
+
+.ck-host-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--ck-radius-sm);
+}
+
+.ck-host-head:focus-visible {
+  outline: 2px solid var(--td-brand-color, #0052d9);
+  outline-offset: -2px;
+}
+
+.ck-host-head:hover {
+  background: var(--ck-bg);
+}
+
+.ck-host-title {
+  font-weight: 500;
+}
+
+.ck-host-body {
+  padding: 0 12px 12px 40px;
+}
+
+.ck-snippet {
+  margin-top: 12px;
+}
+
+.ck-snippet-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ck-table-plain {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ck-table-plain th,
+.ck-table-plain td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ck-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ck-table-plain th {
+  width: 180px;
+  font-weight: 500;
+  color: var(--ck-text-2);
+}
+
+/* 窄屏：侧栏收成 56px，详情单列。 */
+@media (max-width: 900px) {
+  .ck-sider {
+    width: 56px;
+  }
+
+  .ck-main-inner {
+    padding: 16px;
+  }
+
+  .ck-topbar-center {
+    display: none;
+  }
+}

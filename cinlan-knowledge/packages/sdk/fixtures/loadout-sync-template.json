@@ -1,0 +1,28 @@
+{
+  "action": "loadout/sync-template",
+  "request": {
+    "agent_id": "agt_333333333333333333333333",
+    "mode": "add-missing"
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_000000000000000000000000",
+    "data": {
+      "applied": 1,
+      "removed": 0,
+      "template_agent_id": "agt_666666666666666666666666",
+      "bindings": [
+        {
+          "asset_id": "ast_777777777777777777777777",
+          "priority": 10,
+          "injection_mode": "inject",
+          "pin_version": null,
+          "source": "template",
+          "bound_by": "usr_111111111111111111111111",
+          "created_at": "2026-11-13T09:00:00.000Z"
+        }
+      ]
+    }
+  }
+}

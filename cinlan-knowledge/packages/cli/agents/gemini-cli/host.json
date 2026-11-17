@@ -1,0 +1,33 @@
+{
+  "name": "gemini-cli",
+  "title": "Gemini CLI",
+  "mcp": {
+    "file": "~/.gemini/settings.json",
+    "format": "json",
+    "key": "mcpServers.ck",
+    "insert": false,
+    "trust": true
+  },
+  "hook": {
+    "file": "~/.gemini/settings.json",
+    "format": "json",
+    "key": "hooks.SessionStart",
+    "matcher": "startup|resume|clear",
+    "output": "claude-code",
+    "timeout_ms": 15000,
+    "name": "cinlan-knowledge"
+  },
+  "instructions": "brief",
+  "budgets": {
+    "hook": { "budget_chars": 8000 },
+    "tool": { "budget_chars": 12000 }
+  },
+  "skill_dir": "~/.agents/skills",
+  "rules_file": "~/.gemini/GEMINI.md",
+  "import_scan": [
+    "~/.gemini/skills",
+    "~/.agents/skills",
+    "<workspace>/.gemini/skills",
+    "<workspace>/.agents/skills"
+  ]
+}

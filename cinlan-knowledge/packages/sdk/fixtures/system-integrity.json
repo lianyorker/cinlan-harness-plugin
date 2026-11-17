@@ -1,0 +1,28 @@
+{
+  "action": "system/integrity",
+  "request": {},
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_000000000000000000000000",
+    "data": {
+      "ok": false,
+      "checked_at": "2026-11-13T09:00:00.000Z",
+      "assets": 7,
+      "versions": { "total": 8, "verified": 7, "unverifiable": 0, "mismatched": 1 },
+      "files": { "total": 1, "mismatched": 0 },
+      "fts": { "indexed": 7, "missing": 0, "stale": 0, "orphaned": 0 },
+      "issue_count": 1,
+      "issues": [
+        {
+          "kind": "hash_mismatch",
+          "asset_id": "ast_444444444444444444444444",
+          "version": 4,
+          "path": null,
+          "detail": "content_hash differs from the recomputed value"
+        }
+      ],
+      "truncated": false
+    }
+  }
+}

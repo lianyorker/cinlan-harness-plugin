@@ -1,0 +1,58 @@
+{
+  "action": "usage/summary",
+  "request": {
+    "team": "cinlan",
+    "days": 90
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_000000000000000000000000",
+    "data": {
+      "days": 90,
+      "from": "2026-08-15",
+      "to": "2026-11-13",
+      "by_asset": [
+        {
+          "asset_id": "ast_444444444444444444444444",
+          "title": "发版检查单",
+          "type": "memory",
+          "status": "active",
+          "owner_user_id": "usr_111111111111111111111111",
+          "injected": 12,
+          "opened": 3
+        }
+      ],
+      "by_agent": [
+        {
+          "agent_id": "agt_333333333333333333333333",
+          "name": "cc-yorker",
+          "host": "claude-code",
+          "owner_user_id": "usr_111111111111111111111111",
+          "injected": 12,
+          "opened": 3
+        }
+      ],
+      "cold": [
+        {
+          "asset_id": "ast_555555555555555555555555",
+          "title": "零用量资产",
+          "type": "memory",
+          "status": "active",
+          "owner_user_id": "usr_111111111111111111111111",
+          "visibility": "team",
+          "updated_at": "2026-10-01T00:00:00.000Z"
+        }
+      ],
+      "agents_stale": [
+        {
+          "agent_id": "agt_333333333333333333333333",
+          "name": "cc-yorker",
+          "host": "claude-code",
+          "owner_user_id": "usr_111111111111111111111111",
+          "last_seen_at": null
+        }
+      ]
+    }
+  }
+}

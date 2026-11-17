@@ -1,0 +1,32 @@
+{
+  "name": "@cinlan/knowledge-sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "cinlan-knowledge 契约：信封、错误枚举、P1 动作类型、fixture",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./fixtures/*": "./fixtures/*"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/",
+    "fixtures/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node -e \"process.exit(0)\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "license": "MIT"
+}

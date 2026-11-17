@@ -1,0 +1,38 @@
+{
+  "name": "@cinlan/knowledge-hub",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "cinlan-knowledge hub：RPC 服务端",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "cinlan-knowledge": "./lib/bin.js"
+  },
+  "files": [
+    "lib/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test \".test-out/test/*.test.js\""
+  },
+  "dependencies": {
+    "@cinlan/knowledge-core": "workspace:*",
+    "@cinlan/knowledge-mcp": "workspace:*",
+    "@cinlan/knowledge-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "license": "MIT"
+}

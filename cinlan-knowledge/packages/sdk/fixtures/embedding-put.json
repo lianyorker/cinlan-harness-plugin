@@ -1,0 +1,14 @@
+{
+  "action": "embedding/put",
+  "request": {
+    "asset_id": "ast_444444444444444444444444",
+    "model": "fake-mini",
+    "vectors": [[0.1, 0.2, 0.3, 0.4]]
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_333333333333333333333333",
+    "data": { "written": 1 }
+  }
+}

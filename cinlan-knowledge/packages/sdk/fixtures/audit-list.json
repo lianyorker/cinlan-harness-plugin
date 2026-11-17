@@ -1,0 +1,30 @@
+{
+  "action": "audit/list",
+  "request": {
+    "team": "cinlan",
+    "target_type": "asset",
+    "action": "asset/create",
+    "limit": 20
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_000000000000000000000000",
+    "data": {
+      "items": [
+        {
+          "id": 1,
+          "at": "2026-11-13T08:15:42.000Z",
+          "request_id": "req_000000000000000000000001",
+          "actor_user_id": "usr_111111111111111111111111",
+          "actor_agent_id": null,
+          "action": "asset/create",
+          "target_type": "asset",
+          "target_id": "ast_444444444444444444444444",
+          "detail": { "type": "memory", "visibility": "private", "version": 1 }
+        }
+      ],
+      "next_cursor": ""
+    }
+  }
+}

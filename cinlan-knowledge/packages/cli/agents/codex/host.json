@@ -1,0 +1,31 @@
+{
+  "name": "codex",
+  "title": "Codex CLI",
+  "mcp": {
+    "file": "~/.codex/config.toml",
+    "format": "toml",
+    "key": "mcp_servers.ck",
+    "insert": false
+  },
+  "hook": {
+    "file": "~/.codex/hooks.json",
+    "format": "json",
+    "key": "hooks.SessionStart",
+    "matcher": "startup|clear|compact",
+    "output": "claude-code",
+    "timeout_sec": 15,
+    "trust": { "file": "~/.codex/config.toml" },
+    "enable_hint": "codex features enable hooks"
+  },
+  "instructions": "brief",
+  "budgets": {
+    "hook": { "budget_chars": 8000 },
+    "tool": { "budget_chars": 12000 }
+  },
+  "skill_dir": "~/.agents/skills",
+  "rules_file": "~/.codex/AGENTS.md",
+  "import_scan": [
+    "~/.agents/skills",
+    "<workspace>/.agents/skills"
+  ]
+}

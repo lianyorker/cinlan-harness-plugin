@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "opencode 远端 MCP 条目模板。落点：~/.config/opencode/opencode.json 的 mcp.ck。",
+    "type 是 \"remote\"（不是 \"http\"）；key 不进配置：Authorization 由宿主环境代理补，x-ck-* 头声明 agent/host/baseline。",
+    "占位符：{{HUB_URL}} = hub 地址（不带尾斜杠）；{{AGENT}} = <team>/<name>。"
+  ],
+  "mcp.ck": {
+    "type": "remote",
+    "url": "{{HUB_URL}}/mcp",
+    "headers": {
+      "x-ck-agent": "{{AGENT}}",
+      "x-ck-host": "opencode",
+      "x-ck-baseline": "brief"
+    }
+  }
+}

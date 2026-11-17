@@ -1,0 +1,7 @@
+# config.yaml 片段：并入顶层 hooks: 段的 pre_llm_call: 列表
+# pre_llm_call 每个 LLM 调用都触发；extra.is_first_turn === true 才注入（首轮门控在 ck 侧）。
+# shell hook 还需要 (pre_llm_call, command) 进 shell-hooks-allowlist.json 才会执行——ck setup 代写。
+hooks:
+  pre_llm_call:
+    - command: 'node "{{CK_ENTRY}}" hook pre-llm-call --host hermes --agent {{AGENT}}'
+      timeout: 15

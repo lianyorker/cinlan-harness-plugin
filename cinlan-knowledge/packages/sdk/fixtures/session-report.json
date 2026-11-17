@@ -1,0 +1,32 @@
+{
+  "action": "session/report",
+  "request": {
+    "team_id": "team_222222222222222222222222",
+    "session_id": "sess_demo_1",
+    "candidates": [
+      {
+        "type": "memory",
+        "title": "夜班教训：回滚优先",
+        "content": "热修不过夜：先回滚止血，再定位根因。",
+        "layer": "atom"
+      }
+    ]
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_333333333333333333333333",
+    "data": {
+      "drafts": [
+        {
+          "id": "ast_555555555555555555555555",
+          "title": "夜班教训：回滚优先",
+          "visibility": "private",
+          "status": "draft",
+          "proof_count": 1,
+          "session_ids": ["sess_demo_1"]
+        }
+      ]
+    }
+  }
+}

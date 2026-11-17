@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "codex SessionStart hook 条目模板。落点：~/.codex/hooks.json 的 hooks.SessionStart。",
+    "matcher 覆盖 startup / clear / compact（resume 与 fork 的历史里已有 baseline，不重复注入）。",
+    "占位符：{{CK_ENTRY}} = ck 入口绝对路径（lib/bin.js）；{{AGENT}} = <team>/<name>。",
+    "前置：hooks 引擎默认关闭，先跑一次 `codex features enable hooks`。",
+    "信任：手工抄这条后需在 TUI 里 `/hooks` 审查一次；`ck setup --write` 会代写 hooks.state 信任表免掉这一步。",
+    "无 hook 输出上限时 ck 按 budgets.hook.budget_chars（8000）提前降级为 brief。"
+  ],
+  "hooks.SessionStart": [
+    {
+      "matcher": "startup|clear|compact",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node \"{{CK_ENTRY}}\" hook session-start --host codex --agent {{AGENT}}",
+          "timeout": 15
+        }
+      ]
+    }
+  ]
+}

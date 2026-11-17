@@ -1,0 +1,37 @@
+{
+  "name": "@cinlan/knowledge-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "cinlan-knowledge MCP 面：五个工具的唯一实现，hub 的 /mcp 与 ck mcp 共用",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test \".test-out/test/*.test.js\""
+  },
+  "dependencies": {
+    "@cinlan/knowledge-core": "workspace:*",
+    "@cinlan/knowledge-sdk": "workspace:*",
+    "@modelcontextprotocol/server": "^2.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "license": "MIT"
+}

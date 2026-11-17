@@ -1,0 +1,29 @@
+{
+  "action": "system/stats",
+  "request": {},
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_000000000000000000000000",
+    "data": {
+      "generated_at": "2026-11-13T09:00:00.000Z",
+      "schema_version": 1,
+      "db_bytes": 143360,
+      "users": { "total": 2, "active": 2, "disabled": 0 },
+      "teams": 1,
+      "agents": { "total": 2, "active": 2, "archived": 0, "templates": 1 },
+      "assets": {
+        "total": 7,
+        "by_type": { "memory": 6, "skill": 1, "wiki": 0, "codegraph": 0 },
+        "by_status": { "draft": 0, "active": 7, "deprecated": 0, "archived": 0 },
+        "expired": 0,
+        "expiring_7d": 0
+      },
+      "versions": 8,
+      "files": { "total": 1, "bytes": 42 },
+      "reviews": { "total": 1, "pending": 1 },
+      "usage_rows": 2,
+      "audit_rows": 20
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "dsh",
+  "title": "DeepSeek Harness",
+  "mcp": {
+    "file": "~/.dsh/cordis.patch.yml",
+    "format": "yaml",
+    "key": "cinlan-knowledge",
+    "insert": true,
+    "plugin": "@deepseek-ai/dsh-mcp-client"
+  },
+  "hook": null,
+  "instructions": "full",
+  "budgets": {
+    "instructions": { "budget_chars": 12000, "max_bytes": 24000 }
+  },
+  "skill_dir": "~/.agents/skills",
+  "import_scan": [
+    "<workspace>/.dsh/skills",
+    "<workspace>/.agents/skills",
+    "$DSH_HOME/skills",
+    "~/.agents/skills"
+  ]
+}

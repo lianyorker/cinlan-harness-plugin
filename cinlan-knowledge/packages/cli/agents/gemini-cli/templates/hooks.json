@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "gemini-cli SessionStart hook 条目模板。落点：~/.gemini/settings.json 的 hooks.SessionStart（与 mcpServers 同一文件）。",
+    "matcher 覆盖 startup|resume|clear；压缩走的是独立的 PreCompress 事件，SessionStart 没有 compact 源。",
+    "hooks 引擎默认开（enableHooks 缺省 true）；用户级 settings.json 无信任审查（项目级才查 trusted_hooks.json）。",
+    "name 是显示名兼禁用键：settings.json 的 disabledHooks 数组里写 \"cinlan-knowledge\" 可单独关掉本条。",
+    "timeout 单位是毫秒（gemini 的 DEFAULT_HOOK_TIMEOUT=60000），这里 15000 = 15s。",
+    "输出形状与 Claude Code 相同（hookSpecificOutput.additionalContext），注入成 <hook_context> 包裹的 user 消息。",
+    "无 hook 输出上限时 ck 按 budgets.hook.budget_chars（8000）提前降级为 brief。",
+    "占位符：{{CK_ENTRY}} = ck 入口绝对路径（lib/bin.js）；{{AGENT}} = <team>/<name>。"
+  ],
+  "hooks.SessionStart": [
+    {
+      "matcher": "startup|resume|clear",
+      "hooks": [
+        {
+          "type": "command",
+          "name": "cinlan-knowledge",
+          "command": "node \"{{CK_ENTRY}}\" hook session-start --host gemini-cli --agent {{AGENT}}",
+          "timeout": 15000
+        }
+      ]
+    }
+  ]
+}

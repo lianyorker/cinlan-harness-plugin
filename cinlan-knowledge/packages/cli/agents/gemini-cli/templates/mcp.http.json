@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "gemini-cli 远端（streamable HTTP）MCP 条目模板。落点：~/.gemini/settings.json 的 mcpServers.ck。",
+    "key 不进配置：Authorization 由宿主环境/代理补；x-ck-* 头声明 agent/host/baseline 口径。",
+    "type 必须显式写 \"http\"（gemini 的 serverConfigSchema 区分 sse/http）。",
+    "占位符：{{HUB_URL}} = hub 地址（不带尾斜杠）；{{AGENT}} = <team>/<name>。"
+  ],
+  "mcpServers.ck": {
+    "type": "http",
+    "url": "{{HUB_URL}}/mcp",
+    "headers": {
+      "x-ck-agent": "{{AGENT}}",
+      "x-ck-host": "gemini-cli",
+      "x-ck-baseline": "brief"
+    },
+    "trust": true
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "_comment": [
+    "opencode stdio MCP 条目模板。落点：~/.config/opencode/opencode.json 的 mcp.ck。",
+    "command 是整条 argv 数组（type: local，无 command/args 分写）；v2 归一化到 mcp.servers，v1 形状仍读。",
+    "baseline 走 MCP instructions（brief）进系统提示；无配置式 shell hook，--rules 可写 AGENTS.md 标记块。",
+    "工具前缀：<server>_<tool>，即 ck_knowledge_status 等 5 个（v2 Code Mode 下 tools.ck.knowledge_status()）。",
+    "占位符：{{CK_ENTRY}} = ck 入口绝对路径（lib/bin.js）；{{AGENT}} = <team>/<name>。"
+  ],
+  "mcp.ck": {
+    "type": "local",
+    "command": ["node", "{{CK_ENTRY}}", "mcp", "--host", "opencode", "--agent", "{{AGENT}}"]
+  }
+}

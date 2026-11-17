@@ -1,0 +1,28 @@
+{
+  "action": "review/decide",
+  "request": {
+    "review_id": "rev_999999999999999999999999",
+    "decision": "reject",
+    "reason": "含客户名，脱敏后再提"
+  },
+  "response": {
+    "code": 0,
+    "message": "OK",
+    "request_id": "req_555555555555555555555555",
+    "data": {
+      "review": {
+        "id": "rev_999999999999999999999999",
+        "team_id": "team_222222222222222222222222",
+        "asset_id": "ast_444444444444444444444444",
+        "kind": "share",
+        "status": "rejected",
+        "requester_user_id": "usr_111111111111111111111111",
+        "note": "发版流程，全员需要",
+        "reviewer_user_id": "usr_aaaaaaaaaaaaaaaaaaaaaaaa",
+        "reason": "含客户名，脱敏后再提",
+        "created_at": "2026-11-12T02:00:00.000Z",
+        "decided_at": "2026-11-12T03:00:00.000Z"
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "hermes",
+  "title": "Hermes (Nous Research)",
+  "mcp": {
+    "file": "~/.hermes/config.yaml",
+    "format": "yaml",
+    "key": "mcp_servers.ck",
+    "insert": false
+  },
+  "hook": {
+    "file": "~/.hermes/config.yaml",
+    "format": "yaml",
+    "key": "hooks.pre_llm_call",
+    "output": "hermes-context",
+    "timeout_sec": 15,
+    "consent": { "file": "~/.hermes/shell-hooks-allowlist.json" }
+  },
+  "instructions": "brief",
+  "budgets": { "hook": { "budget_chars": 8000 }, "tool": { "budget_chars": 12000 } },
+  "skill_dir": "~/.hermes/skills",
+  "import_scan": ["~/.hermes/skills", "~/.agents/skills", "<workspace>/.hermes/skills", "<workspace>/.agents/skills"],
+  "platforms": {
+    "win32": {
+      "mcp": { "file": "%LOCALAPPDATA%/hermes/config.yaml" },
+      "hook": {
+        "file": "%LOCALAPPDATA%/hermes/config.yaml",
+        "consent": { "file": "%LOCALAPPDATA%/hermes/shell-hooks-allowlist.json" }
+      },
+      "skill_dir": "%LOCALAPPDATA%/hermes/skills",
+      "import_scan": [
+        "%LOCALAPPDATA%/hermes/skills",
+        "~/.agents/skills",
+        "<workspace>/.hermes/skills",
+        "<workspace>/.agents/skills"
+      ]
+    }
+  }
+}

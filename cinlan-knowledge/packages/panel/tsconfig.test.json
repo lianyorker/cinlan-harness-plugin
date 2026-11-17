@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": ".test-out",
+    "rootDir": ".",
+    "declaration": false
+  },
+  "include": ["src/lib/**/*.ts", "test/**/*.ts"]
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Cinlan Knowledge">
+  <rect width="32" height="32" rx="6" fill="#0052d9"/>
+  <path d="M9 8h9.5a4.5 4.5 0 0 1 4.5 4.5V24H13.5A4.5 4.5 0 0 1 9 19.5V8Z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M13 13h6M13 17h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+</svg>

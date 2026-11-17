@@ -1,0 +1,9 @@
+node_modules/
+lib/
+.test-out/
+dist/
+packages/panel/public/hosts.json
+data/
+*.tgz
+*.log
+knowledge.config.json

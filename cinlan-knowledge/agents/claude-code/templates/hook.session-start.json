@@ -1,0 +1,19 @@
+{
+  "_comment": [
+    "claude-code SessionStart hook 条目模板（docs/hosts.md §4.3）。落点：~/.claude/settings.json 的 hooks.SessionStart。",
+    "matcher 覆盖 startup / clear / compact 三种会话开始情形；同一 matcher 组里已有其他 hook 时只追加、不替换。",
+    "占位符：{{CK_ENTRY}} = ck 入口绝对路径（lib/bin.js）；{{AGENT}} = <team>/<name>。",
+    "无 hook 预算：输出超过 ~10,000 字符时宿主会落盘并只保留预览；ck 自己按 budgets.hook.budget_chars（8000）提前降级。"
+  ],
+  "hooks.SessionStart": [
+    {
+      "matcher": "startup|clear|compact",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node \"{{CK_ENTRY}}\" hook session-start --host claude-code --agent {{AGENT}}"
+        }
+      ]
+    }
+  ]
+}
