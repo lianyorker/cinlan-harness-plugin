@@ -62,7 +62,6 @@ window.__ModuleLoader__.load({
       noChange: 'sections unchanged', collapsed: 'collapsed',
       howMasked: 'How it was masked', valuesN: '{n} values', replacedN: '{n} replacements',
       lookup: 'Found by', position: 'Position',
-      expand: 'Expand', collapse: 'Collapse',
       kind_EMAIL: 'Email', kind_PHONE: 'Phone', kind_ID_CARD: 'ID card', kind_BANK_CARD: 'Bank card',
       kind_SSN: 'SSN', kind_PASSPORT: 'Passport', kind_IBAN: 'IBAN', kind_BIRTHDAY: 'Birthday',
       kind_MAC: 'MAC address', kind_SERIAL: 'Serial number', kind_USERNAME: 'Username', kind_HOSTNAME: 'Hostname',
@@ -117,7 +116,6 @@ window.__ModuleLoader__.load({
       noChange: '段没有改动', collapsed: '已折叠',
       howMasked: '怎么遮的', valuesN: '{n} 个值', replacedN: '{n} 处',
       lookup: '查找方式', position: '位置',
-      expand: '展开', collapse: '收起',
       kind_EMAIL: '邮箱', kind_PHONE: '手机号', kind_ID_CARD: '身份证', kind_BANK_CARD: '银行卡',
       kind_SSN: 'SSN', kind_PASSPORT: '护照', kind_IBAN: 'IBAN', kind_BIRTHDAY: '生日',
       kind_MAC: 'MAC 地址', kind_SERIAL: '序列号', kind_USERNAME: '用户名', kind_HOSTNAME: '主机名',
@@ -200,8 +198,6 @@ window.__ModuleLoader__.load({
 .dsr-tabs button.on{background:var(--dsw-alias-brand-primary);color:#fff}
 .dsr-tabs button:not(:last-child){border-right:1px solid var(--dsw-alias-border-l3)}
 .dsr-content{padding:0}
-.dsr-content.clamped{max-height:220px;overflow:hidden;position:relative}
-.dsr-content.clamped::after{content:'';position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(transparent,var(--dsw-alias-bg-layer-1));pointer-events:none}
 .dsr-content-row{display:flex;flex-direction:column;border-bottom:1px solid var(--dsw-alias-border-l2)}
 .dsr-content-row:last-child{border-bottom:0}
 .dsr-crow-head{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:var(--dsw-alias-label-tertiary);border-bottom:1px solid var(--dsw-alias-border-l2)}
@@ -247,9 +243,6 @@ window.__ModuleLoader__.load({
 .dsr-detail-main .dsr-panel{flex:1;min-height:0;display:flex;flex-direction:column}
 .dsr-detail-main .dsr-content{flex:1;min-height:0;overflow-y:auto}
 .dsr-detail-right{width:300px;flex:none;display:flex;flex-direction:column;min-height:0}
-.dsr-expandbar{display:flex;justify-content:center;padding:6px 0}
-.dsr-expand{font:inherit;font-size:12px;line-height:1;border:1px solid var(--dsw-alias-border-l3);border-radius:999px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);padding:5px 14px;cursor:pointer}
-.dsr-expand:hover{border-color:var(--dsw-alias-label-tertiary)}
 `
 
     function Switch({ on, onChange }) {
@@ -450,7 +443,6 @@ window.__ModuleLoader__.load({
     // magpie-style detail: breadcrumb + flow steps + content compare + side list
     function RedactionDetail({ rec, t, onBack }) {
       const [contentTab, setContentTab] = useState('diff') // original | masked | diff
-      const [expanded, setExpanded] = useState(false)
       const [selVal, setSelVal] = useState(null)
 
       const finders = [...new Set((rec.values || []).map(v => v.by))]
@@ -495,7 +487,6 @@ window.__ModuleLoader__.load({
         if (scrollRefs.current.content) scrollRefs.current.content.scrollTop = 0
         if (scrollRefs.current.side) scrollRefs.current.side.scrollTop = 0
         setSelVal(null)
-        setExpanded(false)
         setPop(null)
       }, [rec.id])
 
@@ -591,7 +582,7 @@ window.__ModuleLoader__.load({
                   [['original', t('tabOriginal')], ['masked', t('tabMasked')], ['diff', t('tabDiff')]].map(([k, label]) =>
                     h('button', { key: k, type: 'button', className: contentTab === k ? 'on' : '', onClick: () => setContentTab(k) }, label))),
               ]),
-              h('div', { key: 'content', ref: (el) => { scrollRefs.current.content = el }, className: 'dsr-content' + (expanded ? '' : ' clamped') },
+              h('div', { key: 'content', ref: (el) => { scrollRefs.current.content = el }, className: 'dsr-content' },
                 rows.length === 0 && unchanged.length === 0
                   ? h('div', { className: 'dsr-empty', style: { padding: 16 } }, t('empty'))
                   : [
@@ -626,9 +617,6 @@ window.__ModuleLoader__.load({
                           ]),
                       ])),
                   ]),
-              rows.length > 0 ? h('div', { key: 'exp', className: 'dsr-expandbar' },
-                h('button', { type: 'button', className: 'dsr-expand', onClick: () => setExpanded(v => !v) },
-                  expanded ? t('collapse') : t('expand'))) : null,
             ]),
           ]),
 
