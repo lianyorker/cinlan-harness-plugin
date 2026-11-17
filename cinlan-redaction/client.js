@@ -210,7 +210,13 @@ window.__ModuleLoader__.load({
 .dsr-content-col.right{color:var(--dsw-alias-label-primary)}
 .dsr-collapsed{padding:8px 12px;font-size:11px;color:var(--dsw-alias-label-tertiary);border-bottom:1px solid var(--dsw-alias-border-l2);cursor:pointer}
 .dsr-collapsed:hover{background:var(--dsw-alias-bg-layer-2,rgba(128,128,128,.06))}
-.dsr-hl{background:color-mix(in srgb,var(--dsw-alias-brand-primary) 16%,transparent);color:var(--dsw-alias-brand-primary);border-radius:3px;padding:0 2px}
+.dsr-hl{background:color-mix(in srgb,var(--dsw-alias-brand-primary) 16%,transparent);color:var(--dsw-alias-brand-primary);border-radius:3px;padding:0 2px;cursor:help}
+.dsr-pop{position:fixed;z-index:1000;width:280px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:6px;font-size:12px;pointer-events:none}
+.dsr-pop-kind{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--dsw-alias-label-primary)}
+.dsr-pop-map{font-family:var(--dsw-font-mono,ui-monospace,monospace);font-size:12px;color:var(--dsw-alias-brand-primary);word-break:break-all}
+.dsr-pop-meta{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--dsw-alias-label-tertiary)}
+.dsr-pop-meta span{display:flex;gap:6px}
+.dsr-pop-meta b{color:var(--dsw-alias-label-secondary);font-weight:400;min-width:44px}
 .dsr-count{font-size:10px;line-height:1;padding:3px 6px;border-radius:5px;background:color-mix(in srgb,var(--dsw-alias-brand-primary) 12%,transparent);color:var(--dsw-alias-brand-primary);flex:none}
 .dsr-side{width:300px;flex:none;display:flex;flex-direction:column;gap:0}
 .dsr-side-head{padding:12px 16px;border-bottom:1px solid var(--dsw-alias-border-l2);display:flex;align-items:center;justify-content:space-between}
@@ -478,14 +484,26 @@ window.__ModuleLoader__.load({
         setExpanded(false)
       }, [rec.id])
 
-      // inline-highlight every stored placeholder inside masked text
-      const Highlight = ({ text, marks }) => {
+      // inline-highlight every stored placeholder inside masked text; hovering a
+      // mark reports (placeholder, element) up so the detail can float a card.
+      const Highlight = ({ text, marks, onPh }) => {
         if (typeof text !== 'string' || !marks || marks.length === 0) return text
         const uniq = [...new Set(marks)].filter(Boolean).sort((a, b) => b.length - a.length)
         if (uniq.length === 0) return text
         const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         const parts = text.split(new RegExp('(' + uniq.map(esc).join('|') + ')', 'g'))
-        return parts.map((p, i) => uniq.includes(p) ? h('mark', { key: i, className: 'dsr-hl' }, p) : p)
+        return parts.map((p, i) => uniq.includes(p)
+          ? h('mark', { key: i, className: 'dsr-hl', onMouseEnter: (e) => onPh && onPh(p, e.currentTarget), onMouseLeave: () => onPh && onPh(null) }, p)
+          : p)
+      }
+
+      const [pop, setPop] = useState(null) // { x, y, v }
+      const showPop = (ph, el) => {
+        if (ph === null) { setPop(null); return }
+        const v = (rec.values || []).find(x => x.placeholder === ph)
+        if (!v) return
+        const r = el.getBoundingClientRect()
+        setPop({ x: Math.max(8, Math.min(r.left, window.innerWidth - 300)), y: r.bottom + 6, v })
       }
 
       const KIND_COLOR = (k) => {
@@ -556,10 +574,10 @@ window.__ModuleLoader__.load({
                       ]),
                       h('div', { key: 'main', className: 'dsr-content-main' },
                         contentTab === 'original' ? h('div', { className: 'dsr-content-col left' }, r.before) :
-                        contentTab === 'masked' ? h('div', { className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs })) :
+                        contentTab === 'masked' ? h('div', { className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs, onPh: showPop })) :
                         [
                           h('div', { key: 'l', className: 'dsr-content-col left' }, r.before),
-                          h('div', { key: 'r', className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs })),
+                          h('div', { key: 'r', className: 'dsr-content-col right' }, h(Highlight, { text: r.after, marks: r.phs, onPh: showPop })),
                         ]),
                     ]))),
               rows.length > 0 ? h('div', { key: 'exp', className: 'dsr-expandbar' },
@@ -597,6 +615,20 @@ window.__ModuleLoader__.load({
             ]),
           ]),
         ]),
+
+        // placeholder hover card (record只存 head+len，原值不落盘)
+        pop ? h('div', { key: 'pop', className: 'dsr-pop', style: { left: pop.x + 'px', top: pop.y + 'px' } }, [
+          h('div', { key: 'k', className: 'dsr-pop-kind' }, [
+            h('span', { key: 'd', className: 'dsr-side-dot', style: { background: KIND_COLOR(pop.v.kind) } }),
+            h('span', { key: 'n' }, kindLabel(pop.v.kind)),
+            h('span', { key: 'c', className: 'dsr-side-count' }, '×' + pop.v.n),
+          ]),
+          h('div', { key: 'm', className: 'dsr-pop-map' }, maskVal(pop.v.head, pop.v.len) + ' → ' + pop.v.placeholder),
+          h('div', { key: 'meta', className: 'dsr-pop-meta' }, [
+            h('span', { key: 'by' }, [h('b', { key: 'b' }, t('lookup')), h('span', { key: 'v' }, t('by' + pop.v.by[0].toUpperCase() + pop.v.by.slice(1)))]),
+            h('span', { key: 'path' }, [h('b', { key: 'b' }, t('position')), h('span', { key: 'v' }, pop.v.path)]),
+          ]),
+        ]) : null,
       ])
     }
 
