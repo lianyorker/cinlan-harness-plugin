@@ -15,7 +15,6 @@ import type { Principal } from "./access.js";
 import {
   applyStatus,
   applyVisibility,
-  appendVersion,
   checkTransition,
   commitVersion,
   prepareUpdate,
@@ -355,8 +354,6 @@ export function updateThroughGate(
   actor: Principal,
   asset: Asset,
   input: UpdateAssetInput,
-  /** 回滚等场景强制产生新版本（即使内容相同也要留痕） */
-  force?: boolean,
 ): GateOutcome<UpdateResult> {
   const current = reloadAsset(db, asset.id);
   requireRead(db, actor, current);
@@ -365,36 +362,7 @@ export function updateThroughGate(
   const policy = updatePolicy(team.review_mode, current.visibility === "private", canManage(db, actor, current));
   if (policy === "forbidden") throw forbidden("review_mode off: read-only members cannot edit shared assets");
   if (policy === "direct") {
-    // 直通沿用版本层的实现（含 base_version 冲突与"无变化"判定）；force 时跳过无变化短路
-    if (force === true) {
-      const result = withTx(db, () => {
-        const currentRow = readVersionRow(db, current.id, current.current_version);
-        if (!currentRow) throw notFound("current version row not found");
-        // 回滚带现行版本的文件（不清空 skill 附属文件）
-        const files = db
-          .prepare("SELECT path, bytes, sha256, data FROM asset_file WHERE asset_id = ? AND version = ? ORDER BY path")
-          .all(current.id, current.current_version) as unknown as { path: string; bytes: number; sha256: string; data: Uint8Array }[];
-        const filesInput = files.map((f) => ({ path: f.path, bytes: f.bytes, sha256: f.sha256, data: Buffer.from(f.data) }));
-        const { version } = appendVersion(db, current, "committed", input.base_version, actor.user.id, {
-          title: input.title ?? current.title,
-          summary: input.summary ?? current.summary,
-          content: input.content ?? currentRow.content,
-          tags: current.tags,
-          layer: current.layer,
-          expires_at: current.expires_at,
-          files: filesInput,
-        }, input.change_note ?? "");
-        commitVersion(db, current, version.version, {
-          title: input.title ?? current.title,
-          summary: input.summary ?? current.summary,
-          tags: current.tags,
-          layer: current.layer,
-          expires_at: current.expires_at,
-        });
-        return { changed: true, version: version.version };
-      });
-      return { applied: true, result, review: null };
-    }
+    // 直通沿用版本层的实现（含 base_version 冲突与"无变化"判定）
     const result = updateAssetDirect(db, actor, current, input);
     return { applied: true, result, review: null };
   }

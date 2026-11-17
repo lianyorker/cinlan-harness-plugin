@@ -620,6 +620,16 @@ F13 之后剩下这些：`die()`（单次请求失败后调用，实测 10 次�
 - opencode：用户只有 `opencode.jsonc` 时，`ck setup` 会在旁边新建一份 `opencode.json`。两份并存时 opencode 怎么合并，没有验证（本机未装）。
 - hermes allowlist 的两处小差异：`approved_at` 是 JS 的毫秒格式（hermes 只拿它显示）；文件带 UTF-8 BOM 时 hermes 读得了，`ck setup` 报 `conflict`。
 
+### 6.12 live 验证脚本的中文编码坑（2026-11-17）
+
+**症状**：用 PowerShell 5.1 `Invoke-RestMethod -Body ($obj | ConvertTo-Json)` 做 live 验证时，`asset/update` 改中文正文后 `asset/rollback` 表现成「不产生新版本」，一度当成 core/hub 的版本链 bug 追查。
+
+**根因**：PowerShell 5.1 的 `Invoke-RestMethod` 把 `-Body` 字符串按 Latin-1 发出，`"第一版。"` 和 `"第二版。"` 到服务端都变成 `????`——内容与现行版本逐字节相同，`updateAsset` 的「无变化短路」（`changed: hash !== current.content_hash`）正确判定 `changed: false`，不落新版本。后续 rollback 自然只剩 v1+rollback 一条。**core 的版本链与审批门没有任何 bug。**
+
+**教训 / 规则**：live 验证脚本一律用 node（`scripts/dev-seed.mjs` 同款 `node:http` 或全局 fetch，body 用 `JSON.stringify`，天然 UTF-8）；不要用 PowerShell 5.1 的 `Invoke-RestMethod` 发含中文的 JSON。必须用时，先 `[System.Text.Encoding]::UTF8.GetBytes($json)` 再 `-Body $bytes`。
+
+**收尾**：排查期间给 `updateThroughGate` 加的 `force` 参数已回退（无调用方）；`asset/rollback` 保留「直接 `appendVersion` + `commitVersion`」的实现——回滚强制产生新版本留痕（即使内容与现行相同），不走 `updateAsset` 的无变化短路，这是设计语义而非 bug 修复。e2e-gate 扩到 25 断言（B.1–B.6 + S.1–S.3 + E.1–E.10）2026-11-17 全绿，覆盖受限资产 ACL、PII 预检、版本回滚、收件箱徽标、草稿丢弃、团队策略切换、Agent 归档、Wiki 类型、多 Agent 共享 skill、预算降级。
+
 ## 7. 运行时产物与清理
 
 我没有删任何东西。验收全部结束后按下面清理。

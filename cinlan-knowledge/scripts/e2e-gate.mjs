@@ -773,6 +773,12 @@ async function main() {
   await page.waitReady();
 
   // E.4 收件箱徽标：草稿堆积时顶栏徽标出现
+  // S.1 的草稿已被采纳走，此刻收件箱是空的——先给成员落一条新草稿再验徽标
+  await call("session/report", memberKey, {
+    team: TEAM_SLUG,
+    session_id: "gate-sess-1",
+    candidates: [{ type: "memory", title: "徽标验证草稿", content: "E.4 徽标验证用，随后丢弃。", layer: "atom" }],
+  });
   await page.login(memberKey);
   await page.goto(`${base}/panel/assets`);
   await page.waitReady();
@@ -790,27 +796,35 @@ async function main() {
   await page.waitText("徽标验证草稿");
   assert(await page.clickRow("徽标验证草稿"), "点不到草稿行（E.5）");
   await page.waitText("丢弃");
-  assert(await page.clickButton("丢弃这条草稿"), "找不到「丢弃这条草稿」按钮（E.5）");
+  // 丢弃按钮在 Popconfirm 里：点按钮弹确认层，再点「确定」
+  const discardDone = await page.popConfirm("丢弃这条草稿");
+  assert(discardDone === "ok", `丢弃确认没走通：${discardDone}`);
   await page.waitText("已丢弃");
   pass("E.5", "草稿丢弃：收件箱丢弃动作（归档）");
 
   // E.6 团队策略切换：review_mode off 时共享直通
   await page.login(adminKey);
   await page.goto(`${base}/panel/teams`);
-  await page.waitReady();
+  // 修复后非 SA 的团队列表也走 team/list 真实数据：名称列显示「验收门团队 · gate」，不再是合成的 slug
+  await page.waitText(TEAM_TITLE);
   assert(await page.clickRow(TEAM_TITLE), "点不到团队行（E.6）");
   await page.waitText("审批策略");
-  assert(await page.pickOption(SEL_SHARE, "免审（off）"), "审批策略选不成（E.6）");
+  // 「审批策略」Select 在 .ck-section 内的 label.ck-field 里（SEL_SHARE 匹配的「共享」section 只在资产抽屉）
+  const SEL_POLICY = `(() => [...document.querySelectorAll(".ck-section .ck-field")].find((f) => f.querySelector(".ck-field-label")?.textContent === "审批策略")?.querySelector(".t-select"))()`;
+  let policy = await page.pickOption(SEL_POLICY, "免审（off）");
+  assert(policy.startsWith("ok"), `审批策略选不成：${policy}`);
   assert(await page.clickButton("保存策略"), "找不到「保存策略」按钮（E.6）");
   await page.waitText("策略已更新");
   pass("E.6", "团队策略切换：review_mode off 时共享直通");
 
   // E.7 Agent 归档：归档后不再参与配装解析
   await page.goto(`${base}/panel/agents`);
-  await page.waitReady();
+  await page.waitText("gate-agent");
   assert(await page.clickRow("gate-agent"), "点不到 Agent 行（E.7）");
   await page.waitText("配装表");
-  assert(await page.clickButton("归档这个 Agent"), "找不到「归档这个 Agent」按钮（E.7）");
+  // 归档按钮在 Popconfirm 里：点按钮弹确认层，再点「确定」
+  const archiveDone = await page.popConfirm("归档这个 Agent");
+  assert(archiveDone === "ok", `归档确认没走通：${archiveDone}`);
   await page.waitText("已归档");
   pass("E.7", "Agent 归档：归档后不再参与配装解析");
 

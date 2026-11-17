@@ -108,26 +108,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [client, key, verification, session]);
 
-  // 团队列表：SA 取全部（分页拉完），其他人用验证明细里的成员关系。
+  // 团队列表：统一走 team/list 分页拉全——core 的 listTeams 对非 SA 已按成员关系收窄（JOIN team_member），
+  // 且返回 title / description / review_mode 等真实字段。不再从 auth/verify 的成员关系合成：
+  // 那会让非 SA 的列表页显示 slug 顶替的名称与恒为「免审」的假策略（2026-11-17 e2e-gate E.6 实跑发现）。
   useEffect(() => {
     if (verification === null) {
       setTeams([]);
-      return;
-    }
-    if (!verification.is_system_admin) {
-      setTeams(
-        verification.teams.map((t) => ({
-          id: t.team_id,
-          name: t.team,
-          title: t.team,
-          description: "",
-          review_mode: "off",
-          allow_self_approve: false,
-          template_agent_id: null,
-          created_at: "",
-        })),
-      );
-      setTeamsError(null);
       return;
     }
     let alive = true;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Drawer, Input, Table, Tag, MessagePlugin } from "tdesign-react";
 import { useApp, useNavigate } from "../app/context.js";
-import { EmptyState, ErrorBlock, PageHeader, useAsync } from "../app/ui.js";
+import { EmptyState, ErrorBlock, PageHeader } from "../app/ui.js";
 import { formatTime } from "../lib/format.js";
 import { buildPath } from "../lib/router.js";
 
@@ -14,15 +14,9 @@ export function TeamsPage() {
   const [creating, setCreating] = useState(false);
   const v = app.verification!;
 
-  const state = useAsync(
-    (signal) =>
-      v.is_system_admin
-        ? app.call("team/list", { limit: 100 }, { signal }).then((page) => page.items)
-        : Promise.resolve(app.teams),
-    [v.is_system_admin, app.teams],
-  );
-
-  const rows = state.data ?? [];
+  // 两种身份都用 app.teams：context 已按身份分页拉全（core 的 listTeams 对非 SA 按成员收窄），
+  // 页面不再重复请求。「新建团队」仍只对 SA 显示。
+  const rows = app.teams;
   const myTeams = new Map(v.teams.map((t) => [t.team_id, t.role]));
 
   return (
@@ -39,9 +33,9 @@ export function TeamsPage() {
         }
       />
 
-      {state.error ? <ErrorBlock error={state.error} onRetry={state.reload} /> : null}
+      {app.teamsError ? <ErrorBlock error={app.teamsError} /> : null}
 
-      {!state.loading && !state.error && rows.length === 0 ? (
+      {rows.length === 0 && !app.teamsError ? (
         <EmptyState title="还没有团队" hint="请 System Admin 先建一个团队。" />
       ) : null}
 
